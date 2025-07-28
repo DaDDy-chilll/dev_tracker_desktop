@@ -1,0 +1,87 @@
+@import 'tailwindcss/preflight';
+@import 'tailwindcss';
+
+@layer base {
+  :root {
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    --ring: 215 20.2% 65.1%;
+
+    --radius: 0.5rem;
+
+    /*! use color */
+    --background: #dae0da;
+    --foreground: 222.2 47.4% 11.2%;
+    --light: #ffffff;
+
+    --primary: #10b981;
+    --primary-foreground: #10b98186;
+
+    --muted: #565656;
+    --muted-foreground: #5656569f;
+
+    --button-ghost: #e0f3ed;
+    --button-ghost-foreground: #1d4f42;
+
+    --secondary: #06402b;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --accent1: #d7ffdb;
+    --accent2: #ffb1b1;
+    --accent3: #c9b1ff;
+    --accent4: #f1be70;
+    --accent5: #8feaf0;
+    --dark-green: #272727;
+    --accent-foreground: 222.2 47.4% 11.2%;
+  }
+
+  /* Font face is defined at the top level */
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Import Google Fonts */
+  @import url('https://fonts.googleapis.com/css2?family=Exo:ital,wght@0,100..900;1,100..900&display=swap');
+
+  /* Import local Skyer font */
+  @font-face {
+    font-family: 'Skyer';
+    src: url('../fonts/skyer-400.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 2px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #272727;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #10b981;
+  border-radius: 5px;
+}
