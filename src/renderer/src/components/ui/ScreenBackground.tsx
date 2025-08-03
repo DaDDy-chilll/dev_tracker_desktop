@@ -8,7 +8,6 @@ const ScreenBackground = ({ children }: ScreenBackgroundProps): JSX.Element => {
 
   // Create a dot pattern canvas and convert to data URL
   useEffect(() => {
-    console.log('ScreenBackground mounted')
 
     // Create canvas for dot pattern
     const canvas = document.createElement('canvas')

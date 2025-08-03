@@ -2,6 +2,8 @@ import { Colors } from '@renderer/constants/Colors'
 import { useFullScreenState } from '@renderer/layouts/full-screen/useFullScreenState'
 import { JSX } from 'react'
 import { Project, ProjectStatus } from '../../services/projects/project.type'
+import { formatDate } from 'date-fns'
+import { getImageUrl } from '@renderer/utils'
 
 type ProjectListItemProps = {
   project: Project
@@ -12,12 +14,16 @@ export const ProjectListItem = ({ project, click }: ProjectListItemProps): JSX.E
   const { selectedProjectId } = useFullScreenState()
 
   const isActive = project.id === selectedProjectId
+
   return (
     <>
       <div
         key={project.id}
         className="flex-shrink-0 w-72 rounded-lg shadow-sm overflow-hidden cursor-pointer"
-        style={{ backgroundColor: isActive ? Colors.primaryForeground : Colors.mutedForeground }}
+        style={{
+          border: isActive ? `2px solid ${Colors.primary}` : `2px solid ${Colors.muted}`,
+          backgroundColor: Colors.mutedForeground
+        }}
         onClick={click}
       >
         <div className="" style={{ padding: 10 }}>
@@ -37,7 +43,12 @@ export const ProjectListItem = ({ project, click }: ProjectListItemProps): JSX.E
                   style={{ backgroundColor: project.color }}
                 >
                   {project.image_id ? (
-                    <img src={project.image_id.toString()} alt="" />
+                    <img
+                      src={getImageUrl(project.image.url)}
+                      style={{ width: '100%', height: '100%' }}
+                      className="object-contain rounded-sm"
+                      crossOrigin="anonymous"
+                    />
                   ) : (
                     <svg
                       width="14"
@@ -101,12 +112,40 @@ export const ProjectListItem = ({ project, click }: ProjectListItemProps): JSX.E
                   PLANNING
                 </span>
               )}
+              {project.status === ProjectStatus.HOLDING && (
+                <span
+                  className="bg-gray-500 text-white text-xs rounded"
+                  style={{ padding: '2px 6px' }}
+                >
+                  HOLDING
+                </span>
+              )}
+              {project.status === ProjectStatus.MAINTENANCE && (
+                <span
+                  className="bg-purple-500 text-white text-xs rounded"
+                  style={{ padding: '2px 6px' }}
+                >
+                  MAINTENANCE
+                </span>
+              )}
+              {project.status === ProjectStatus.FINISHED && (
+                <span
+                  className="bg-green-500 text-white text-xs rounded"
+                  style={{ padding: '2px 6px' }}
+                >
+                  FINISHED
+                </span>
+              )}
             </div>
           </div>
           <div className="mt-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs text-light">{project.task_count} tasks</p>
-              <p className="text-xs text-light">{new Date().toLocaleDateString()}</p>
+              <p className="text-xs text-light">
+                {project.task_count} tasks / {project.member_count} members
+              </p>
+              <p className="text-xs text-light">
+                {formatDate(project.created_at || '', 'yyyy-MMM-dd')}
+              </p>
             </div>
           </div>
         </div>

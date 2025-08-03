@@ -9,12 +9,14 @@ import {
   TaskTimeline
 } from './components/project'
 import { ProjectsTasksTable } from './components/project/ProjectsTasksTable'
+
 const Project = (): JSX.Element => {
   const { dockType } = useFullScreenState()
 
   if (dockType !== 'kanban') return <></>
-  else
-    return (
+  
+  return (
+    <>
       <div
         className="w-full h-[96.3vh] flex flex-col relative gap-2"
         style={{ paddingInline: 5, paddingBlock: 10 }}
@@ -26,13 +28,14 @@ const Project = (): JSX.Element => {
           <ProjectStatusChart />
         </div>
         <div className="w-full h-28 rounded-md" style={{ backgroundColor: Colors.darkGreen }}>
-          <ProjectLists  />
+          <ProjectLists />
         </div>
         <div className="w-full h-[70%] rounded-md" style={{ backgroundColor: Colors.darkGreen }}>
           <ProjectsTasksTable />
         </div>
       </div>
-    )
+    </>
+  )
 }
 
 export default Project

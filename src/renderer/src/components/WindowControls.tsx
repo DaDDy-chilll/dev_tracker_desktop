@@ -25,7 +25,6 @@ const WindowControls: React.FC = () => {
     if (window.electron && window.electron.ipcRenderer) {
       // Define the handler function separately for better cleanup
       const handleWindowStateUpdate = (_event: IpcRendererEvent, state: WindowState): void => {
-        console.log('Window state updated:', state)
         setWindowState(state)
       }
 
@@ -46,7 +45,6 @@ const WindowControls: React.FC = () => {
     return () => {}
   }, [])
 
-  console.log('window.electron', window.api)
 
   const handleTiny = (): void => {
     try {

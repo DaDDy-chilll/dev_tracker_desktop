@@ -1,5 +1,5 @@
 appId: com.electron.app
-productName: dev-track
+productName: Dev Tracker
 directories:
   buildResources: build
 files:
@@ -31,9 +31,9 @@ dmg:
   artifactName: ${name}-${version}.${ext}
 linux:
   target:
-    - AppImage
+    # - AppImage
     - snap
-    - deb
+    # - deb
   maintainer: electronjs.org
   category: Utility
 appImage:

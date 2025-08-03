@@ -78,21 +78,6 @@ export const TaskTimeline = (): JSX.Element => {
       </div>
 
       <div className="relative h-64">
-        {/* Background with grid lines */}
-        <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,#2e2e2e,#2e2e2e_10px,#616161_10px,#616161_20px)]">
-          {/* Vertical grid lines */}
-          {days.map((day, index) => (
-            <div
-              key={`grid-${day}`}
-              className="absolute top-0 bottom-0 border-l border-gray-300 opacity-30"
-              style={{
-                left: `${(index / (days.length - 1)) * 100}%`,
-                height: '100%'
-              }}
-            />
-          ))}
-        </div>
-
         {/* Timeline content */}
         <div className="relative h-full p-4">
           {/* Tasks */}

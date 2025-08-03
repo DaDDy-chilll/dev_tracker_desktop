@@ -13,6 +13,8 @@ export const ProjectLists = (): JSX.Element => {
   const [isOpen, setIsOpen] = useState(false)
   const { data, isLoading } = useGetProjects()
   const { setSelectedProjectId } = useFullScreenState()
+
+
   useEffect(() => {
     if (data && data.data && data.data.length > 0) {
       setProjects(data.data)

@@ -4,5 +4,8 @@ export const apiRoute = {
   },
   task: {
     index: '/task'
+  },
+  image: {
+    upload: '/images/upload'
   }
 }

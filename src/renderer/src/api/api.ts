@@ -13,7 +13,13 @@ import { FetchConfig, ApiResponse, ErrorResponse } from './type' // Adjust the i
 // For Electron, we'll use localStorage or Electron Store instead of AsyncStorage
 // And we'll use Node.js network checking instead of NetInfo
 
-const BASE_URL = 'http://localhost:5001/'
+// Use Vite's environment variables instead of process.env
+const isDevelopment = import.meta.env.DEV
+// Define API URLs based on environment
+const DEV_URL = 'http://localhost:5001/'
+const PROD_URL = 'http://dev-track-api.myancare/'
+const BASE_URL = isDevelopment ? DEV_URL : PROD_URL
+
 // Electron uses process.env instead of EXPO_PUBLIC_*
 
 // Custom error classes for better error handling
@@ -58,12 +64,18 @@ const axiosInstance = axios.create({
 // Check network connectivity by pinging our own API server
 const checkNetworkConnectivity = async (): Promise<boolean> => {
   try {
-    // Try to connect to our own API server instead of an external service
-    // This complies with CSP that only allows connections to 'self'
-    await axios.head(BASE_URL, { timeout: 5000 })
+    // Use a simple GET request to check connectivity
+    // Use a more reliable endpoint that's guaranteed to exist
+    await axios.get(`${BASE_URL}api/v1`, {
+      timeout: 5000,
+      validateStatus: function (status) {
+        // Consider any response (even error responses) as a sign of connectivity
+        return status >= 200 && status < 600
+      }
+    })
     return true
-  } catch {
-    // Ignoring the error since we just want to return false on any failure
+  } catch (error) {
+    console.error('Network connectivity check failed:', error)
     return false
   }
 }
@@ -89,13 +101,13 @@ export const api = async <T = unknown, R = unknown>(
 ): Promise<ApiResponse<R>> => {
   try {
     // Check network connectivity first
-    // const isConnected = await checkNetworkConnectivity()
-    // if (!isConnected) {
-    //   throw new NetworkError('No internet connection. Please check your network settings.', 0)
-    // }
+    const isConnected = await checkNetworkConnectivity()
+    if (!isConnected) {
+      console.error('Network connectivity check failed - no connection')
+      throw new NetworkError('No internet connection. Please check your network settings.', 0)
+    }
 
     const { method = 'GET', headers = {}, body, query, file, params } = config
-    console.log('config',config)
 
     // Prepare axios request config
     const axiosConfig: AxiosRequestConfig = {
@@ -130,7 +142,6 @@ export const api = async <T = unknown, R = unknown>(
       // Handle axios errors
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError
-        console.log('axiosError', axiosError)
         // Log the error details
         console.error('API Error Response:', {
           status: axiosError.response?.status,

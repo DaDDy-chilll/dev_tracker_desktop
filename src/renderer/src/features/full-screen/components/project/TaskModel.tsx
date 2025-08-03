@@ -66,13 +66,12 @@ export const TaskModel = ({ isOpen, onClose }: TaskModelProps): JSX.Element => {
       // Create task data object
       const taskData = {
         name: taskName,
-        duration: new Date(duration),
+        due_time: new Date(duration),
         status,
         priority,
         project_id: selectedProjectId
       }
 
-      console.log('Submitting task data:', taskData)
 
       // Call the API to create the task
       await mutateAsync(taskData)

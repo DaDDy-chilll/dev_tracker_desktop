@@ -16,7 +16,7 @@ export enum TaskPriority {
 export interface Task {
   id?: number
   name: string
-  duration: Date
+  due_time: Date
   status: TaskStatus
   priority: TaskPriority
   projectId?: number
@@ -27,7 +27,7 @@ export interface Task {
 
 export interface TaskCreate {
   name: string
-  duration: Date
+  due_time: Date
   status: TaskStatus
   priority: TaskPriority
   projectId?: number
@@ -40,6 +40,6 @@ export interface TaskUpdate {
   priority?: TaskPriority
   progress?: number
   name?: string
-  duration?: Date
+  due_time?: Date
   projectId?: number
 }

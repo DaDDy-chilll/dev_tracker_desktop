@@ -25,11 +25,11 @@ export const TaskProgress = (): JSX.Element => {
     progressData[0]
   )
 
-  const getChangeColor = (change: number): string => {
-    if (change <= 2) return 'bg-black text-white' // Black for small changes
-    if (change >= 10) return 'bg-orange-500 text-white' // Orange for large changes
-    return 'bg-green-500 text-white' // Green for moderate changes
-  }
+  // const getChangeColor = (change: number): string => {
+  //   if (change <= 2) return 'bg-black text-white' // Black for small changes
+  //   if (change >= 10) return 'bg-orange-500 text-white' // Orange for large changes
+  //   return 'bg-green-500 text-white' // Green for moderate changes
+  // }
 
   return (
     <div
@@ -62,7 +62,6 @@ export const TaskProgress = (): JSX.Element => {
 
       <div className="relative h-64">
         {/* Progress bars with diagonal stripes background */}
-        <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,#2e2e2e,#2e2e2e_10px,#616161_10px,#616161_20px)]"></div>
         <div className="relative h-full flex items-end justify-between">
           {progressData.map((item, index) => (
             <div

@@ -1,156 +1,120 @@
+import {
+  CheckOutlined,
+  ClockCircleFilled,
+  HistoryOutlined,
+  SyncOutlined,
+  ThunderboltOutlined
+} from '@ant-design/icons'
 import { Colors } from '@renderer/constants/Colors'
-import { Check, ChevronDown, Circle } from 'lucide-react'
-import { JSX, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useOnClickOutside, useDebounceValue } from 'usehooks-ts'
+import { Select } from 'antd'
+import { JSX } from 'react'
 import { useUpdateTask } from '../../services'
 import { TaskStatus } from '../../services/tasks/task.type'
+import type { MessageInstance } from 'antd/es/message/interface'
 
-type StatusOption = {
-  value: string
-  label: string
-  icon: JSX.Element
-  color: string
-}
+const statusOptions = [
+  {
+    value: TaskStatus.NOT_STARTED,
+    label: 'Not Started',
+    icon: <ClockCircleFilled size={16} style={{ color: '#6B7280' }} />,
+    color: '#6B7280'
+  },
+  {
+    value: TaskStatus.IN_PROGRESS,
+    label: 'In Progress',
+    icon: <SyncOutlined spin size={16} style={{ color: '#F59E0B' }} />,
+    color: '#F59E0B'
+  },
+  {
+    value: TaskStatus.IN_REVIEW,
+    label: 'In Review',
+    icon: <HistoryOutlined size={16} style={{ color: '#8B5CF6' }} />,
+    color: '#8B5CF6'
+  },
+  {
+    value: TaskStatus.IN_TEST,
+    label: 'In Test',
+    icon: <ThunderboltOutlined size={16} style={{ color: '#3B82F6' }} />,
+    color: '#3B82F6'
+  },
+  {
+    value: TaskStatus.DONE,
+    label: 'Done',
+    icon: <CheckOutlined size={16} style={{ color: '#10B981' }} />,
+    color: '#10B981'
+  }
+]
 
 export const StatusComponent = ({
   status,
-  id
+  id,
+  messageApi
 }: {
   status: string
   id: number | undefined
+  messageApi: MessageInstance
 }): JSX.Element => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [selectedStatus, setSelectedStatus] = useState(status)
-  // Debounce the status changes with 300ms delay
-  const [debouncedStatus, updateDebouncedStatus] = useDebounceValue(selectedStatus, 300)
   const { mutateAsync: updateTask } = useUpdateTask()
-  // Using HTMLDivElement type for the ref
-  const ref = useRef<HTMLDivElement>(null)
-
-  // Memoize status options to prevent unnecessary re-renders
-  const statusOptions: StatusOption[] = useMemo(
-    () => [
-      {
-        value: TaskStatus.NOT_STARTED,
-        label: 'Not Started',
-        icon: <Circle size={16} color="#6B7280" />,
-        color: '#F3F4F6'
-      },
-      {
-        value: TaskStatus.IN_PROGRESS,
-        label: 'In Progress',
-        icon: <Circle size={16} fill="#F59E0B" color="#F59E0B" />,
-        color: '#FEF3C7'
-      },
-      {
-        value: TaskStatus.IN_REVIEW,
-        label: 'In Review',
-        icon: <Circle size={16} fill="#8B5CF6" color="#8B5CF6" />,
-        color: '#EDE9FE'
-      },
-      {
-        value: TaskStatus.IN_TEST,
-        label: 'In Test',
-        icon: <Circle size={16} fill="#3B82F6" color="#3B82F6" />,
-        color: '#DBEAFE'
-      },
-      {
-        value: TaskStatus.DONE,
-        label: 'Done',
-        icon: <Check size={16} color="#10B981" />,
-        color: '#D1FAE5'
+  const currentStatus = statusOptions.find((option) => option.value === status) || statusOptions[0]
+  const handleStatusChange = async (newStatus: string): Promise<void> => {
+    if (id && newStatus !== status) {
+      try {
+        await updateTask(
+          {
+            id,
+            status: newStatus as TaskStatus
+          },
+          {
+            onError: (error) => {
+              messageApi.error(`Failed to update task status ${error}`, 3)
+            }
+          }
+        )
+      } catch (error) {
+        messageApi.error(`Failed to update task status ${error}`, 3)
       }
-    ],
-    []
-  )
-
-  // Memoize the current status to prevent unnecessary recalculations
-  const currentStatus = useMemo(
-    () => statusOptions.find((option) => option.value === selectedStatus) || statusOptions[0],
-    [selectedStatus, statusOptions]
-  )
-
-  // Use useCallback to prevent unnecessary recreation of this function
-  const handleStatusChange = useCallback(
-    (newStatus: string): void => {
-      setSelectedStatus(newStatus)
-      // Update debounced value when status changes
-      updateDebouncedStatus(newStatus)
-      setIsOpen(false)
-    },
-    [updateDebouncedStatus]
-  )
-
-  // Use useCallback for click outside handler
-  const handleClickOutside = useCallback((): void => {
-    setIsOpen(false)
-  }, [])
-
-  // Memoize the update task function to prevent unnecessary API calls
-  const performUpdate = useCallback(() => {
-    if (id !== undefined) {
-      updateTask({
-        id,
-        status: debouncedStatus as TaskStatus
-      })
     }
-  }, [id, debouncedStatus, updateTask])
-
-  // Only trigger the update when debouncedStatus changes
-  useEffect(() => {
-    performUpdate()
-  }, [performUpdate])
-
-  // Using the hook to detect clicks outside the dropdown
-  useOnClickOutside(ref as RefObject<HTMLElement>, handleClickOutside)
+  }
 
   return (
-    <div className="relative" ref={ref} style={{ color: Colors.light }}>
-      <button
-        className="flex items-center justify-between w-fit px-3 py-2 text-sm rounded-md cursor-pointer"
-        style={{
-          border: `1px solid ${Colors.muted}`,
-          padding: 5,
-          borderRadius: 5,
-          minWidth: '140px'
-        }}
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <div className="flex items-center gap-2">
-          {currentStatus.icon}
-          <span>{currentStatus.label}</span>
-        </div>
-        <ChevronDown size={16} />
-      </button>
-
-      {isOpen && (
-        <div
-          className="absolute z-10 mt-1 w-fit  rounded-md "
+    <Select
+      value={currentStatus.value}
+      onChange={handleStatusChange}
+      style={{ width: 150, borderRadius: '6px', border: `1px solid #606161` }}
+      bordered={false}
+      dropdownStyle={{
+        backgroundColor: Colors.darkGreen,
+        border: `1px solid #10B981`,
+        borderRadius: '6px',
+        padding: '8px 0'
+      }}
+      dropdownRender={(menu) => <div style={{ padding: '4px 0' }}>{menu}</div>}
+    >
+      {statusOptions.map((option) => (
+        <Select.Option
+          key={option.value}
+          value={option.value}
           style={{
-            border: '1px solid #10B981',
-            padding: 10,
-            backgroundColor: Colors.darkGreen,
-            boxShadow: '0 5px 2px 2px rgba(48, 48, 48, 0.349)'
+            backgroundColor: 'transparent',
+            margin: 0,
+            padding: '4px 12px'
           }}
         >
-          <ul className="py-1">
-            {statusOptions.map((option) => (
-              <li key={option.value}>
-                <button
-                  className="flex items-center gap-2 w-full px-3 py-2 text-white text-sm text-left cursor-pointer hover:text-green-400"
-                  style={{
-                    padding: 5
-                  }}
-                  onClick={() => handleStatusChange(option.value)}
-                >
-                  {option.icon}
-                  <span className="hover:text-green-300">{option.label}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+
+              gap: '8px',
+              color: Colors.light,
+              padding: '4px 0'
+            }}
+          >
+            <span>{option.icon}</span>
+            <span>{option.label}</span>
+          </div>
+        </Select.Option>
+      ))}
+    </Select>
   )
 }

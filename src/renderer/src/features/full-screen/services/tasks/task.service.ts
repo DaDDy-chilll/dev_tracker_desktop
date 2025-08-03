@@ -84,3 +84,27 @@ export const useUpdateTask = (): UseMutationResult<ApiResponse<Task>, unknown, T
     }
   })
 }
+
+
+const deleteTask = async (id: number): Promise<ApiResponse<Task>> => {
+  try {
+    const response = await api<Task, Task>(apiRoute.task.index + `/${id}`, {
+      method: 'DELETE'
+    })
+    return response
+  } catch (error) {
+    console.error('Error deleting task:', error)
+    throw error
+  }
+}
+
+export const useDeleteTask = (): UseMutationResult<ApiResponse<Task>, unknown, number> => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: deleteTask,
+    mutationKey: ['delete-task'],
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+    }
+  })
+}

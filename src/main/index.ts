@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, screen } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
+const iconPath = join(__dirname, '../../resources/icon.png')
 
 // Window state enum to track current window state
 enum WindowState {
@@ -21,7 +21,7 @@ function createWindow(): void {
     frame: false, // Remove default window frame (min/max/close buttons)
     alwaysOnTop: true,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    ...(process.platform === 'linux' ? { icon: iconPath } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false

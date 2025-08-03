@@ -64,3 +64,5 @@ export const useGetProjects = (): UseQueryResult<ApiResponse<Project[]>> => {
     queryFn: getProjects
   })
 }
+
+

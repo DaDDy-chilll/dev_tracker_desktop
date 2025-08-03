@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useState, useId } from 'react'
 
 export interface GlassSurfaceProps {
@@ -41,7 +42,7 @@ export interface GlassSurfaceProps {
   style?: React.CSSProperties
 }
 
-const useDarkMode = () => {
+const useDarkMode = (): boolean => {
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
@@ -50,7 +51,7 @@ const useDarkMode = () => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     setIsDark(mediaQuery.matches)
 
-    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches)
+    const handler = (e: MediaQueryListEvent): void => setIsDark(e.matches)
     mediaQuery.addEventListener('change', handler)
     return () => mediaQuery.removeEventListener('change', handler)
   }, [])
@@ -94,7 +95,7 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
 
   const isDarkMode = useDarkMode()
 
-  const generateDisplacementMap = () => {
+  const generateDisplacementMap = (): string => {
     const rect = containerRef.current?.getBoundingClientRect()
     const actualWidth = rect?.width || 400
     const actualHeight = rect?.height || 200
@@ -122,7 +123,7 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
     return `data:image/svg+xml,${encodeURIComponent(svgContent)}`
   }
 
-  const updateDisplacementMap = () => {
+  const updateDisplacementMap = (): void => {
     feImageRef.current?.setAttribute('href', generateDisplacementMap())
   }
 
@@ -191,7 +192,7 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
     setTimeout(updateDisplacementMap, 0)
   }, [width, height])
 
-  const supportsSVGFilters = () => {
+  const supportsSVGFilters = (): boolean => {
     const isWebkit = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
     const isFirefox = /Firefox/.test(navigator.userAgent)
 
@@ -204,7 +205,7 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
     return div.style.backdropFilter !== ''
   }
 
-  const supportsBackdropFilter = () => {
+  const supportsBackdropFilter = (): boolean => {
     if (typeof window === 'undefined') return false
     return CSS.supports('backdrop-filter', 'blur(10px)')
   }
