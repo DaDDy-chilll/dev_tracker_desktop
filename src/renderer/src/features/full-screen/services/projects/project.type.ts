@@ -39,3 +39,13 @@ export interface ImageUpload {
   image: File
   projectId: number
 }
+
+export interface AllProjectTask {
+  id: number
+  name: string
+  status: ProjectStatus
+  color: string
+  _count: {
+    tasks: number
+  }
+}

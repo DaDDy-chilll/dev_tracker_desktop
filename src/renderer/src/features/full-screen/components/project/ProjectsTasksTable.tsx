@@ -9,7 +9,7 @@ import {
 } from '@tanstack/react-table'
 import { message } from 'antd'
 import { compareDesc } from 'date-fns'
-import { Plus } from 'lucide-react'
+import { ArrowDownWideNarrow, Plus } from 'lucide-react'
 import { JSX, useEffect, useMemo, useState } from 'react'
 import { Task, useGetTasks } from '../../services'
 import { ProjectTableLoading } from './ProjectLoading'
@@ -19,11 +19,13 @@ import { TaskModel } from './TaskModel'
 export const ProjectsTasksTable = (): JSX.Element => {
   const [isOpen, setIsOpen] = useState(false)
   const [tasks, setTasks] = useState<Task[]>([])
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
   const { selectedProjectId } = useFullScreenState()
   const { data, isLoading } = useGetTasks(selectedProjectId)
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'priority', desc: true },
-    { id: 'due_time', desc: false }
+    { id: 'due_time', desc: false },
+    { id: 'status', desc: false }
   ])
   const [messageApi, contextHolder] = message.useMessage()
 
@@ -41,9 +43,19 @@ export const ProjectsTasksTable = (): JSX.Element => {
   }, [data])
 
   const handleOpenModal = (): void => {
+    setEditingTask(null)
     setIsOpen(true)
   }
 
+  const handleRowClick = (task: Task): void => {
+    setEditingTask(task)
+    setIsOpen(true)
+  }
+
+  const handleCloseModal = (): void => {
+    setIsOpen(false)
+    setEditingTask(null)
+  }
 
   const columns = useMemo(() => getTaskColumns(messageApi), [messageApi])
   const table = useReactTable({
@@ -61,19 +73,35 @@ export const ProjectsTasksTable = (): JSX.Element => {
     <>
       {contextHolder}
       <div className="p-4" style={{ padding: 10, fontFamily: '"Exo", sans-serif' }}>
-        <table className="min-w-full border-collapse border border-gray-300">
-          <thead>
+        <table className="min-w-full border-collapse border border-gray-300 relative">
+          <thead
+            className="sticky top-0 z-10"
+            style={{ borderBottom: '1px solid #10b981', backgroundColor: Colors.darkGreen }}
+          >
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="" style={{ borderBottom: '1px solid #10b981' }}>
+              <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
                     className="px-4 py-2 text-left"
-                    style={{ color: Colors.primary, padding: 10 }}
+                    style={{
+                      color: Colors.primary,
+                      padding: 10,
+                      cursor: header.column.getCanSort() ? 'pointer' : 'default',
+                      userSelect: 'none',
+                      backgroundColor: 'inherit',
+                      position: 'sticky',
+                      top: 0
+                    }}
+                    onClick={header.column.getToggleSortingHandler()}
                   >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                    <div className="flex items-center gap-2">
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                      {{
+                        asc: <ArrowDownWideNarrow />,
+                        desc: <ArrowDownWideNarrow />
+                      }[header.column.getIsSorted() as string] ?? null}
+                    </div>
                   </th>
                 ))}
               </tr>
@@ -86,8 +114,9 @@ export const ProjectsTasksTable = (): JSX.Element => {
               table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="hover:bg-[#5e5e5e44] text-white "
+                  className="hover:bg-[#5e5e5e44] text-white cursor-pointer"
                   style={{ borderBottom: '1px solid #353535' }}
+                  onDoubleClick={() => handleRowClick(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="border border-gray-300 w-fit py-2">
@@ -98,7 +127,8 @@ export const ProjectsTasksTable = (): JSX.Element => {
               ))
             )}
           </tbody>
-          <tfoot>
+
+          <tfoot className="sticky bottom-0 z-10" style={{ backgroundColor: Colors.darkGreen }}>
             <tr
               className="text-white hover:bg-[#5e5e5e44] cursor-pointer"
               onClick={+selectedProjectId === 0 ? undefined : handleOpenModal}
@@ -114,7 +144,7 @@ export const ProjectsTasksTable = (): JSX.Element => {
           </tfoot>
         </table>
       </div>
-      <TaskModel isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <TaskModel isOpen={isOpen} onClose={handleCloseModal} data={editingTask} />
     </>
   )
 }

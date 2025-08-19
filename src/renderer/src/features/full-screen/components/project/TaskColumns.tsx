@@ -68,6 +68,8 @@ export const getTaskColumns = (messageApi: MessageInstance): ColumnDef<Task, any
           textColor = Colors.darkGreen
         }
 
+        console.log(info.row.original)
+
         return (
           <div className="w-fit" style={{ padding: 10 }}>
             <span
@@ -154,11 +156,11 @@ export const getTaskColumns = (messageApi: MessageInstance): ColumnDef<Task, any
         </div>
       )
     }),
-    columnHelper.accessor('id', {
+    columnHelper.accessor('project_id', {
       header: '',
       cell: (info) => (
         <div className="w-fit" style={{ padding: 10 }}>
-          <DeleteButton id={info.row.original.id!} />
+          <DeleteButton id={info.row.original.id!} projectId={info.row.original.project_id!} />
         </div>
       )
     })

@@ -15,9 +15,10 @@ import {
   UploadProps
 } from 'antd'
 import { RcFile } from 'antd/es/upload'
-import { useState } from 'react'
-import { useCreateProject } from '../../services'
-import { ProjectCreate, ProjectStatus } from '../../services/projects/project.type'
+import { useEffect, useState } from 'react'
+import { useCreateProject, useUpdateProject } from '../../services'
+import { Project, ProjectCreate, ProjectStatus } from '../../services/projects/project.type'
+import { getImageUrl } from '@renderer/utils'
 
 const { Option } = Select
 
@@ -33,6 +34,7 @@ const statusOptions = [
 interface ProjectModelProps {
   isOpen: boolean
   onClose: () => void
+  data?: Project | null
 }
 
 interface ProjectFormValues {
@@ -44,13 +46,47 @@ interface ProjectFormValues {
   imageId: string
 }
 
-export const ProjectModel: React.FC<ProjectModelProps> = ({ isOpen, onClose }) => {
+export const ProjectModel: React.FC<ProjectModelProps> = ({ isOpen, onClose, data }) => {
   const [form] = Form.useForm()
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [uploadedImageId, setUploadedImageId] = useState<string | null>(null)
   const { mutateAsync: createProject, isPending: isSubmitting } = useCreateProject()
+  const { mutateAsync: updateProject, isPending: isUpdating } = useUpdateProject()
   const { mutate: uploadImage, isPending: isUploading } = useUploadImage()
+
+  // Reset form when data changes
+  useEffect(() => {
+    if (isOpen) {
+      if (data) {
+        // Edit mode - populate form with existing data
+        form.setFieldsValue({
+          projectName: data.name,
+          memberCount: data.member_count,
+          color: data.color,
+          status: data.status,
+          imageUrl: data.image?.url || '',
+          imageId: data.image?.id ? String(data.image.id) : ''
+        })
+
+        if (data.image?.url) {
+          setPreviewImage(getImageUrl(data.image.url))
+          setUploadedImageId(String(data.image.id))
+        } else {
+          setPreviewImage(null)
+          setUploadedImageId(null)
+        }
+      } else {
+        // Create mode - reset form
+        form.resetFields()
+        setFileList([])
+        setPreviewImage(null)
+        setUploadedImageId(null)
+      }
+    }
+  }, [data, isOpen, form])
+
+  console.log('previewImage', previewImage)
 
   const handleImageChange: UploadProps['onChange'] = ({ fileList: newFileList }) => {
     setFileList(newFileList)
@@ -116,21 +152,35 @@ export const ProjectModel: React.FC<ProjectModelProps> = ({ isOpen, onClose }) =
       const projectData: ProjectCreate = {
         name: values.projectName,
         member_count: values.memberCount,
-        color: values.color as string,
+        color:
+          typeof values.color === 'string'
+            ? values.color
+            : `#${values.color.metaColor.r.toString(16).padStart(2, '0')}${values.color.metaColor.g.toString(16).padStart(2, '0')}${values.color.metaColor.b.toString(16).padStart(2, '0')}`,
         status: values.status,
         image_id: uploadedImageId ? Number(uploadedImageId) : null
       }
 
-      await createProject(projectData)
-      message.success('Project created successfully')
+      if (data) {
+        // Edit mode - include the project ID
+        await updateProject({
+          id: data.id,
+          projectData
+        })
+        message.success('Project updated successfully')
+      } else {
+        // Create mode
+        await createProject(projectData)
+        message.success('Project created successfully')
+      }
+
       form.resetFields()
       setFileList([])
       setPreviewImage(null)
       setUploadedImageId(null)
       onClose()
     } catch (error) {
-      console.error('Error creating project:', error)
-      message.error('Failed to create project')
+      console.error('Error saving project:', error)
+      message.error(`Failed to ${data ? 'update' : 'create'} project`)
     }
   }
 
@@ -141,10 +191,11 @@ export const ProjectModel: React.FC<ProjectModelProps> = ({ isOpen, onClose }) =
           style={{
             fontFamily: 'Skyer',
             color: Colors.primary,
-            fontSize: '20px'
+            fontSize: '1.2rem',
+            fontWeight: 'bold'
           }}
         >
-          Create New Project
+          {data ? 'Edit Project' : 'Create New Project'}
         </span>
       }
       centered
@@ -157,10 +208,10 @@ export const ProjectModel: React.FC<ProjectModelProps> = ({ isOpen, onClose }) =
         <Button
           key="submit"
           type="primary"
-          loading={isSubmitting || isUploading}
+          loading={isSubmitting || isUploading || isUpdating}
           onClick={() => form.submit()}
         >
-          Create Project
+          {data ? 'Update Project' : 'Create Project'}
         </Button>
       ]}
       closeIcon={<CloseOutlined style={{ color: Colors.light }} />}
@@ -185,9 +236,9 @@ export const ProjectModel: React.FC<ProjectModelProps> = ({ isOpen, onClose }) =
         layout="vertical"
         onFinish={handleSubmit}
         initialValues={{
+          memberCount: 1,
           status: ProjectStatus.PLANING,
-          color: '#000000',
-          memberCount: 0
+          color: '#1890ff'
         }}
       >
         <Form.Item name="imageUrl" label="Project Image">

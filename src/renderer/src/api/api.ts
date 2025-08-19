@@ -17,7 +17,7 @@ import { FetchConfig, ApiResponse, ErrorResponse } from './type' // Adjust the i
 const isDevelopment = import.meta.env.DEV
 // Define API URLs based on environment
 const DEV_URL = 'http://localhost:5001/'
-const PROD_URL = 'http://dev-track-api.myancare/'
+const PROD_URL = 'https://devtrackapi.duckdns.org/'
 const BASE_URL = isDevelopment ? DEV_URL : PROD_URL
 
 // Electron uses process.env instead of EXPO_PUBLIC_*

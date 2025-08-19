@@ -1,15 +1,8 @@
-import { Select, Tag } from 'antd'
-import {
-  CheckCircleFilled,
-  ClockCircleFilled,
-  SyncOutlined,
-  CodeFilled,
-  CheckCircleOutlined
-} from '@ant-design/icons'
-import { useUpdateTask } from '../../services'
-import { TaskStatus } from '../../services/tasks/task.type'
+import { CheckCircleFilled, ClockCircleFilled, CodeFilled, SyncOutlined } from '@ant-design/icons'
 import { Colors } from '@renderer/constants/Colors'
+import { Select, Tag } from 'antd'
 import { JSX } from 'react'
+import { TaskStatus, useUpdateTask } from '@renderer/features/full-screen/services'
 
 const { Option } = Select
 

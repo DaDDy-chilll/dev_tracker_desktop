@@ -3,10 +3,11 @@ import { Delete } from 'lucide-react'
 import { JSX } from 'react'
 import { useDeleteTask } from '../../services/tasks/task.service'
 
-export const DeleteButton = ({ id }: { id: number }): JSX.Element => {
+export const DeleteButton = ({ id, projectId }: { id: number; projectId: number }): JSX.Element => {
   const { mutateAsync: deleteTask, isPending } = useDeleteTask()
+
   const handleDelete = (id: number): void => {
-    deleteTask(id)
+    deleteTask({ id, projectId })
   }
   return (
     <Button

@@ -19,5 +19,5 @@ export const FullScreenLayoutContext = createContext<FullScreenLayoutType>({
   isViewPrice: false,
   priceToggle: () => {},
   selectedProjectId: 0,
-  setSelectedProjectId: () => {},
+  setSelectedProjectId: () => {}
 })

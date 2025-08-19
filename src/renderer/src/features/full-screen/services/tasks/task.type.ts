@@ -19,7 +19,7 @@ export interface Task {
   due_time: Date
   status: TaskStatus
   priority: TaskPriority
-  projectId?: number
+  project_id?: number
   created_at?: Date
   updated_at?: Date
   progress?: number
@@ -30,7 +30,7 @@ export interface TaskCreate {
   due_time: Date
   status: TaskStatus
   priority: TaskPriority
-  projectId?: number
+  project_id?: number
   progress?: number
 }
 
@@ -41,5 +41,5 @@ export interface TaskUpdate {
   progress?: number
   name?: string
   due_time?: Date
-  projectId?: number
+  project_id?: number
 }

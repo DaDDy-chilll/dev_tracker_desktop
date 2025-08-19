@@ -8,7 +8,7 @@ import {
   useQuery,
   useQueryClient
 } from '@tanstack/react-query'
-import { ProjectCreate, Project } from './project.type'
+import { ProjectCreate, Project, AllProjectTask } from './project.type'
 /**
  * Project data interface
  */
@@ -65,4 +65,76 @@ export const useGetProjects = (): UseQueryResult<ApiResponse<Project[]>> => {
   })
 }
 
+const updateProject = async (
+  id: number,
+  projectData: ProjectCreate
+): Promise<ApiResponse<Project>> => {
+  try {
+    const response = await api<ProjectCreate, Project>(apiRoute.project.index + `/${id}`, {
+      method: 'PATCH',
+      body: projectData
+    })
+    return response
+  } catch (error) {
+    console.error('Error updating project:', error)
+    throw error
+  }
+}
 
+export const useUpdateProject = (): UseMutationResult<
+  ApiResponse<Project>,
+  unknown,
+  { id: number; projectData: ProjectCreate }
+> => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, projectData }: { id: number; projectData: ProjectCreate }) =>
+      updateProject(id, projectData),
+    mutationKey: ['update-project'],
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+    }
+  })
+}
+
+const deleteProject = async (id: number): Promise<ApiResponse<Project>> => {
+  try {
+    const response = await api<Project, Project>(apiRoute.project.index + `/${id}`, {
+      method: 'DELETE'
+    })
+    return response
+  } catch (error) {
+    console.error('Error deleting project:', error)
+    throw error
+  }
+}
+
+export const useDeleteProject = (): UseMutationResult<ApiResponse<Project>, unknown, number> => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: deleteProject,
+    mutationKey: ['delete-project'],
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+    }
+  })
+}
+
+const getAllProjectStatus = async (): Promise<ApiResponse<AllProjectTask[]>> => {
+  try {
+    const response = await api<Project[], AllProjectTask[]>(apiRoute.project.index, {
+      method: 'GET'
+    })
+    return response
+  } catch (error) {
+    console.error('Error fetching projects:', error)
+    throw error
+  }
+}
+
+export const useGetAllProjectStatus = (): UseQueryResult<ApiResponse<AllProjectTask[]>> => {
+  return useQuery({
+    queryKey: ['all-project-status'],
+    queryFn: getAllProjectStatus
+  })
+}

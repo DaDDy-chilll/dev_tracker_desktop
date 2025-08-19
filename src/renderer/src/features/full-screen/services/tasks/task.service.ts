@@ -85,10 +85,9 @@ export const useUpdateTask = (): UseMutationResult<ApiResponse<Task>, unknown, T
   })
 }
 
-
-const deleteTask = async (id: number): Promise<ApiResponse<Task>> => {
+const deleteTask = async (id: number, projectId: number): Promise<ApiResponse<Task>> => {
   try {
-    const response = await api<Task, Task>(apiRoute.task.index + `/${id}`, {
+    const response = await api<Task, Task>(apiRoute.task.index + `/${id}?projectId=${projectId}`, {
       method: 'DELETE'
     })
     return response
@@ -98,10 +97,14 @@ const deleteTask = async (id: number): Promise<ApiResponse<Task>> => {
   }
 }
 
-export const useDeleteTask = (): UseMutationResult<ApiResponse<Task>, unknown, number> => {
+export const useDeleteTask = (): UseMutationResult<
+  ApiResponse<Task>,
+  unknown,
+  { id: number; projectId: number }
+> => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: deleteTask,
+    mutationFn: ({ id, projectId }: { id: number; projectId: number }) => deleteTask(id, projectId),
     mutationKey: ['delete-task'],
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })

@@ -1,10 +1,11 @@
-import { JSX, useState } from 'react'
+import { JSX, useState, useEffect } from 'react'
 import { Colors } from '@renderer/constants/Colors'
 import { X } from 'lucide-react'
 import Modal from 'react-modal'
 import { PulseLoader } from 'react-spinners'
-import { TaskPriority, TaskStatus, useCreateTask } from '../../services'
+import { TaskPriority, TaskStatus, useCreateTask, useUpdateTask } from '../../services'
 import { useFullScreenState } from '@renderer/layouts/full-screen/useFullScreenState'
+import { Task } from '../../services/tasks/task.type'
 
 // Set the app element for accessibility
 Modal.setAppElement('#root')
@@ -12,6 +13,7 @@ Modal.setAppElement('#root')
 interface TaskModelProps {
   isOpen: boolean
   onClose: () => void
+  data?: Task | null
 }
 
 // Custom styles for the modal
@@ -51,19 +53,36 @@ const priorityOptions = [
   { value: TaskPriority.URGENT, label: 'Urgent' }
 ]
 
-export const TaskModel = ({ isOpen, onClose }: TaskModelProps): JSX.Element => {
+export const TaskModel = ({ isOpen, onClose, data }: TaskModelProps): JSX.Element => {
   const [taskName, setTaskName] = useState('')
   const [duration, setDuration] = useState<string>('')
   const [status, setStatus] = useState<TaskStatus>(TaskStatus.NOT_STARTED)
   const [priority, setPriority] = useState<TaskPriority>(TaskPriority.MEDIUM)
-  const { mutateAsync, isPending } = useCreateTask()
+  const { mutateAsync: createTask, isPending: isCreating } = useCreateTask()
+  const { mutateAsync: updateTask, isPending: isUpdating } = useUpdateTask()
   const { selectedProjectId } = useFullScreenState()
+
+  console.log(selectedProjectId)
+  // Initialize form with task data if in edit mode
+  useEffect(() => {
+    if (data) {
+      setTaskName(data.name)
+      setDuration(data.due_time ? new Date(data.due_time).toISOString().slice(0, 16) : '')
+      setStatus(data.status)
+      setPriority(data.priority)
+    } else {
+      // Reset form for create mode
+      setTaskName('')
+      setDuration('')
+      setStatus(TaskStatus.NOT_STARTED)
+      setPriority(TaskPriority.MEDIUM)
+    }
+  }, [data, isOpen])
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
 
     try {
-      // Create task data object
       const taskData = {
         name: taskName,
         due_time: new Date(duration),
@@ -72,15 +91,22 @@ export const TaskModel = ({ isOpen, onClose }: TaskModelProps): JSX.Element => {
         project_id: selectedProjectId
       }
 
-
-      // Call the API to create the task
-      await mutateAsync(taskData)
+      if (data?.id) {
+        // Update existing task
+        await updateTask({
+          id: data.id,
+          ...taskData
+        })
+      } else {
+        // Create new task
+        await createTask(taskData)
+      }
 
       // Reset form and close modal
       resetForm()
       onClose()
     } catch (error) {
-      console.error('Error creating task:', error)
+      console.error('Error saving task:', error)
     }
   }
 
@@ -96,18 +122,21 @@ export const TaskModel = ({ isOpen, onClose }: TaskModelProps): JSX.Element => {
     resetForm()
   }
 
+  const isEditMode = Boolean(data?.id)
+  const isSubmitting = isCreating || isUpdating
+
   return (
     <Modal
       isOpen={isOpen}
       onRequestClose={onClose}
       style={customStyles}
-      contentLabel="Create New Task"
+      contentLabel={isEditMode ? 'Edit Task' : 'Create New Task'}
       onAfterClose={handleAfterClose}
     >
       <div className="text-white" style={{ fontFamily: 'Exo, sans-serif' }}>
         <div className="flex justify-between items-center" style={{ marginBottom: 10 }}>
           <p className="text-xl font-bold" style={{ fontFamily: 'Skyer', color: Colors.primary }}>
-            Create New Task
+            {isEditMode ? 'Edit Task' : 'Create New Task'}
           </p>
           <button onClick={onClose} className="text-gray-400 hover:text-white focus:outline-none">
             <X size={24} />
@@ -221,9 +250,15 @@ export const TaskModel = ({ isOpen, onClose }: TaskModelProps): JSX.Element => {
               color: Colors.light,
               padding: 10
             }}
-            disabled={isPending || !taskName.trim() || !duration}
+            disabled={isSubmitting || !taskName.trim() || !duration}
           >
-            {isPending ? <PulseLoader color={Colors.light} size={10} /> : 'Create Task'}
+            {isSubmitting ? (
+              <PulseLoader color={Colors.light} size={10} />
+            ) : isEditMode ? (
+              'Update Task'
+            ) : (
+              'Create Task'
+            )}
           </button>
         </form>
       </div>

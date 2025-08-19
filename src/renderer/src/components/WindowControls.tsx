@@ -45,7 +45,6 @@ const WindowControls: React.FC = () => {
     return () => {}
   }, [])
 
-
   const handleTiny = (): void => {
     try {
       if (window.api && window.api.windowControl) {

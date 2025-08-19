@@ -10,4 +10,3 @@ export const getColorForPriority = (priority: string): string => {
       return '#000000'
   }
 }
-

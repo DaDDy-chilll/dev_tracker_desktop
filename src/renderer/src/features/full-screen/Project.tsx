@@ -14,7 +14,7 @@ const Project = (): JSX.Element => {
   const { dockType } = useFullScreenState()
 
   if (dockType !== 'kanban') return <></>
-  
+
   return (
     <>
       <div
@@ -30,7 +30,10 @@ const Project = (): JSX.Element => {
         <div className="w-full h-28 rounded-md" style={{ backgroundColor: Colors.darkGreen }}>
           <ProjectLists />
         </div>
-        <div className="w-full h-[70%] rounded-md" style={{ backgroundColor: Colors.darkGreen }}>
+        <div
+          className="w-full h-[70%] rounded-md overflow-y-auto"
+          style={{ backgroundColor: Colors.darkGreen }}
+        >
           <ProjectsTasksTable />
         </div>
       </div>

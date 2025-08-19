@@ -8,7 +8,6 @@ const ScreenBackground = ({ children }: ScreenBackgroundProps): JSX.Element => {
 
   // Create a dot pattern canvas and convert to data URL
   useEffect(() => {
-
     // Create canvas for dot pattern
     const canvas = document.createElement('canvas')
     const size = 100 // Size of the canvas/pattern

@@ -45,11 +45,11 @@ export const ProgressBarComponent = ({
   }
 
   const getProgressColor = (percent: number): string => {
-    if (percent < 25) return '#ff4d4f'; // Red for 0-24%
-    if (percent < 50) return '#faad14'; // Orange for 25-49%
-    if (percent < 75) return '#1890ff'; // Blue for 50-74%
-    return Colors.primary; // Green for 75-100%
-  };
+    if (percent < 25) return '#ff4d4f' // Red for 0-24%
+    if (percent < 50) return '#faad14' // Orange for 25-49%
+    if (percent < 75) return '#1890ff' // Blue for 50-74%
+    return Colors.primary // Green for 75-100%
+  }
 
   return (
     <div>
