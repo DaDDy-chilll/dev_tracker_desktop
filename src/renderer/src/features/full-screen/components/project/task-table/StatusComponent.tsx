@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   CheckOutlined,
   ClockCircleFilled,
@@ -6,11 +7,10 @@ import {
   ThunderboltOutlined
 } from '@ant-design/icons'
 import { Colors } from '@renderer/constants/Colors'
-import { Select } from 'antd'
-import { JSX } from 'react'
-import { useUpdateTask } from '../../services'
-import { TaskStatus } from '../../services/tasks/task.type'
-import type { MessageInstance } from 'antd/es/message/interface'
+import { Select, message } from 'antd'
+import { JSX, useEffect } from 'react'
+import { useUpdateTask } from '@renderer/features/full-screen/services'
+import { TaskStatus } from '@renderer/features/full-screen/services/tasks/task.type'
 
 const statusOptions = [
   {
@@ -48,24 +48,67 @@ const statusOptions = [
 export const StatusComponent = ({
   status,
   id,
-  messageApi
+  projectId,
+  projectDir,
+  category,
+  branchName
 }: {
   status: string
   id: number | undefined
-  messageApi: MessageInstance
+  projectId: number | undefined
+  projectDir: string | undefined
+  category: string
+  branchName: string
 }): JSX.Element => {
   const { mutateAsync: updateTask } = useUpdateTask()
+  const [messageApi] = message.useMessage()
   const currentStatus = statusOptions.find((option) => option.value === status) || statusOptions[0]
+
+  // Set up IPC listeners for git checkout responses
+  useEffect(() => {
+    const handleGitSuccess = (
+      _event: any,
+      data: { status: string; branch: string; output: string }
+    ): void => {
+      messageApi.success(`Successfully switched to branch: ${data.branch}`, 3)
+      console.log('Git checkout success:', data)
+    }
+
+    const handleGitError = (_event: any, error: string): void => {
+      messageApi.error(`Git checkout failed: ${error}`, 5)
+      console.error('Git checkout error:', error)
+    }
+
+    // Add IPC listeners
+    window.electron?.ipcRenderer?.on('task-status-success', handleGitSuccess)
+    window.electron?.ipcRenderer?.on('task-status-error', handleGitError)
+
+    // Cleanup listeners on unmount
+    return () => {
+      window.electron?.ipcRenderer?.removeListener('task-status-success', handleGitSuccess)
+      window.electron?.ipcRenderer?.removeListener('task-status-error', handleGitError)
+    }
+  }, [messageApi])
+
   const handleStatusChange = async (newStatus: string): Promise<void> => {
+    console.log('category@@@@@', category)
     if (id && newStatus !== status) {
       try {
         await updateTask(
           {
             id,
-            status: newStatus as TaskStatus
+            status: newStatus as TaskStatus,
+            project_id: projectId,
+            isUpdateStatus: true
           },
           {
+            onSuccess: () => {
+              if (projectDir) {
+                window.api.taskStatus.changeState(newStatus, projectDir, category, branchName)
+              }
+            },
             onError: (error) => {
+              console.log(error)
               messageApi.error(`Failed to update task status ${error}`, 3)
             }
           }

@@ -3,7 +3,8 @@ export const apiRoute = {
     index: '/project'
   },
   task: {
-    index: '/task'
+    index: '/task',
+    status: '/task/status'
   },
   image: {
     upload: '/images/upload'

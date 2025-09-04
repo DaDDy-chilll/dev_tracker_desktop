@@ -11,7 +11,13 @@ export const FullScreenLayoutProvider = ({
   const [dockType, setDockType] = useState<'dashboard' | 'kanban'>('dashboard')
   const { screen } = useGlobalState()
   const [value, toggle] = useToggle(true)
-  const [selectedProjectId, setSelectedProjectId] = useState<number>(0)
+  const [selectedProjectId, setSelectedProjectId] = useState<{
+    id: number
+    projectDir: string
+  }>({
+    id: 0,
+    projectDir: ''
+  })
 
   if (screen !== 'maximize') return <></>
   else

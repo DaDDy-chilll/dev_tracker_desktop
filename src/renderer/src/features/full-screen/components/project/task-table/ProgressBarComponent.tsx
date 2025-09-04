@@ -1,14 +1,16 @@
 import { JSX, useState, useEffect } from 'react'
-import { useUpdateTask } from '../../services'
+import { useUpdateTask } from '@renderer/features/full-screen/services'
 import { Button, Modal, Slider, Progress } from 'antd'
 import { Colors } from '@renderer/constants/Colors'
 
 export const ProgressBarComponent = ({
   progress: initialProgress,
-  id
+  id,
+  projectId
 }: {
   progress: number
   id: number
+  projectId: number
 }): JSX.Element => {
   const [progress, setProgress] = useState(initialProgress)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -30,7 +32,9 @@ export const ProgressBarComponent = ({
     try {
       await updateTask({
         id,
-        progress: tempProgress
+        progress: tempProgress,
+        project_id: projectId,
+        isUpdateStatus: false
       })
       setProgress(tempProgress)
       setIsModalOpen(false)

@@ -1,16 +1,15 @@
 import { Colors } from '@renderer/constants/Colors'
-import { getColorForPriority } from '@renderer/utils'
+import { getColorForPriority, getColorForCategory, getCategoryIcon } from '@renderer/utils'
 import { ColumnDef, createColumnHelper } from '@tanstack/react-table'
 import { CalendarFold, Flag } from 'lucide-react'
 import { formatDate } from 'date-fns'
-import { Task, TaskPriority } from '../../services'
+import { Task, TaskPriority } from '../../../services'
 import { DeleteButton } from './DeleteButton'
 import { ProgressBarComponent } from './ProgressBarComponent'
 import { StatusComponent } from './StatusComponent'
-import { MessageInstance } from 'antd/es/message/interface'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const getTaskColumns = (messageApi: MessageInstance): ColumnDef<Task, any>[] => {
+export const getTaskColumns = (projectDir: string): ColumnDef<Task, any>[] => {
   const columnHelper = createColumnHelper<Task>()
 
   return [
@@ -67,8 +66,6 @@ export const getTaskColumns = (messageApi: MessageInstance): ColumnDef<Task, any
           backgroundColor = '#DCFCE7'
           textColor = Colors.darkGreen
         }
-
-        console.log(info.row.original)
 
         return (
           <div className="w-fit" style={{ padding: 10 }}>
@@ -130,8 +127,33 @@ export const getTaskColumns = (messageApi: MessageInstance): ColumnDef<Task, any
           <StatusComponent
             status={info.getValue()}
             id={info.row.original.id!}
-            messageApi={messageApi}
+            projectId={info.row.original.project_id!}
+            projectDir={projectDir}
+            category={info.row.original.category}
+            branchName={info.row.original.branch_name}
           />
+        </div>
+      )
+    }),
+    columnHelper.accessor('category', {
+      header: 'Category',
+      cell: (info) => (
+        <div className="w-fit" style={{ padding: 10 }}>
+          <span
+            className="flex w-fit justify-center items-center gap-2"
+            style={{
+              border: `1px solid ${Colors.muted}`,
+              padding: '3px 5px',
+              borderRadius: 5
+            }}
+          >
+            {getCategoryIcon(info.getValue() as string)}
+            <p style={{ color: getColorForCategory(info.getValue() as string) }}>
+              {typeof info.getValue() === 'string'
+                ? info.getValue().charAt(0).toUpperCase() + info.getValue().slice(1).toLowerCase()
+                : info.getValue()}
+            </p>
+          </span>
         </div>
       )
     }),
@@ -140,7 +162,11 @@ export const getTaskColumns = (messageApi: MessageInstance): ColumnDef<Task, any
       cell: (info) => {
         return (
           <div style={{ padding: '10px 15px' }}>
-            <ProgressBarComponent progress={Number(info.getValue())} id={info.row.original.id!} />
+            <ProgressBarComponent
+              progress={Number(info.getValue())}
+              id={info.row.original.id!}
+              projectId={info.row.original.project_id!}
+            />
           </div>
         )
       }

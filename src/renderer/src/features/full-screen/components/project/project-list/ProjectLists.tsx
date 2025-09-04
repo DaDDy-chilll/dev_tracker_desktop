@@ -1,12 +1,12 @@
 import { Colors } from '@renderer/constants/Colors'
-import { JSX, useRef, useState, useEffect } from 'react'
-import { DiamondPlus } from 'lucide-react'
-import { ProjectModel } from './ProjectModel'
-import { useGetProjects } from '../../services'
-import { ProjectCardLoading } from './ProjectLoading'
-import { Project } from '../../services/projects/project.type'
-import { ProjectListItem } from './ProjectListItem'
 import { useFullScreenState } from '@renderer/layouts/full-screen/useFullScreenState'
+import { DiamondPlus } from 'lucide-react'
+import { JSX, useEffect, useMemo, useRef, useState } from 'react'
+import { useGetProjects } from '../../../services'
+import { Project } from '../../../services/projects/project.type'
+import { ProjectListItem } from './ProjectListItem'
+import { ProjectCardLoading } from './ProjectLoading'
+import { ProjectModel } from './ProjectModel'
 
 export const ProjectLists = (): JSX.Element => {
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -16,10 +16,14 @@ export const ProjectLists = (): JSX.Element => {
   const { data, isLoading } = useGetProjects()
   const { setSelectedProjectId } = useFullScreenState()
 
+  console.log('data----', data)
   useEffect(() => {
     if (data && data.data && data.data.length > 0) {
       setProjects(data.data)
-      setSelectedProjectId(Number(data.data[0].id))
+      setSelectedProjectId({
+        id: Number(data.data[0].id),
+        projectDir: data.data[0].project_file_url || ''
+      })
     }
   }, [data, setSelectedProjectId])
 
@@ -28,8 +32,11 @@ export const ProjectLists = (): JSX.Element => {
     setIsOpen(true)
   }
 
-  const handleProjectSelect = (id: number): void => {
-    setSelectedProjectId(id)
+  const handleProjectSelect = (id: number, projectDir: string | undefined): void => {
+    setSelectedProjectId({
+      id,
+      projectDir: projectDir || ''
+    })
   }
 
   const handleProjectEdit = (project: Project): void => {
@@ -42,28 +49,42 @@ export const ProjectLists = (): JSX.Element => {
     setSelectedProject(null)
   }
 
+  const statusOrder: string[] = useMemo(
+    () => ['development', 'maintenance', 'holding', 'complete', 'finished', 'planning'],
+    []
+  )
+
+  const statusRank = (status?: string): number => {
+    const key = (status || '').toLowerCase().trim()
+    const idx = statusOrder.indexOf(key)
+    return idx === -1 ? statusOrder.length : idx
+  }
+
+  const sortedProjects = useMemo(() => {
+    return [...projects].sort((a, b) => statusRank(a.status) - statusRank(b.status))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects])
+
+  console.log('project (sorted)', sortedProjects)
+
   return (
     <>
-      <div
-        className="flex flex-row gap-3 items-center w-full h-full"
-        style={{ paddingInline: 5, paddingBlock: 5 }}
-      >
+      <div className="flex flex-row gap-3 items-center w-full h-full">
         <div
-          className="flex flex-row gap-3 overflow-x-auto w-full"
+          className="flex flex-row gap-3 overflow-x-auto w-full p-3"
           style={{
             fontFamily: '"Exo", sans-serif',
-            color: Colors.light,
-            paddingBottom: 5
+            color: Colors.light
           }}
         >
           {isLoading ? (
             <ProjectCardLoading count={3} />
           ) : (
-            projects.map((project) => (
+            sortedProjects.map((project) => (
               <ProjectListItem
                 key={project.id}
                 project={project}
-                click={() => handleProjectSelect(Number(project.id))}
+                click={() => handleProjectSelect(Number(project.id), project.project_file_url)}
                 onDoubleClick={() => handleProjectEdit(project)}
               />
             ))

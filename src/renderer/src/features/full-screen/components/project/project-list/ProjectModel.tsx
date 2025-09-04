@@ -16,8 +16,8 @@ import {
 } from 'antd'
 import { RcFile } from 'antd/es/upload'
 import { useEffect, useState } from 'react'
-import { useCreateProject, useUpdateProject } from '../../services'
-import { Project, ProjectCreate, ProjectStatus } from '../../services/projects/project.type'
+import { useCreateProject, useUpdateProject } from '@renderer/features/full-screen/services/projects/project.service'
+import { Project, ProjectCreate, ProjectStatus } from '@renderer/features/full-screen/services/projects/project.type'
 import { getImageUrl } from '@renderer/utils'
 
 const { Option } = Select
@@ -44,6 +44,7 @@ interface ProjectFormValues {
   status: ProjectStatus
   imageUrl: string
   imageId: string
+  projectFileLink: string
 }
 
 export const ProjectModel: React.FC<ProjectModelProps> = ({ isOpen, onClose, data }) => {
@@ -66,11 +67,21 @@ export const ProjectModel: React.FC<ProjectModelProps> = ({ isOpen, onClose, dat
           color: data.color,
           status: data.status,
           imageUrl: data.image?.url || '',
-          imageId: data.image?.id ? String(data.image.id) : ''
+          imageId: data.image?.id ? String(data.image.id) : '',
+          projectFileLink: data.project_file_url || ''
         })
 
         if (data.image?.url) {
-          setPreviewImage(getImageUrl(data.image.url))
+          const loadImage = async (): Promise<void> => {
+            try {
+              const imageUrl = await getImageUrl(data.image.url)
+              setPreviewImage(imageUrl)
+            } catch (error) {
+              console.error('Failed to load image:', error)
+              setPreviewImage(null)
+            }
+          }
+          loadImage()
           setUploadedImageId(String(data.image.id))
         } else {
           setPreviewImage(null)
@@ -86,9 +97,7 @@ export const ProjectModel: React.FC<ProjectModelProps> = ({ isOpen, onClose, dat
     }
   }, [data, isOpen, form])
 
-  console.log('previewImage', previewImage)
-
-  const handleImageChange: UploadProps['onChange'] = ({ fileList: newFileList }) => {
+  const handleImageChange: UploadProps['onChange'] = async ({ fileList: newFileList }) => {
     setFileList(newFileList)
     if (newFileList.length > 0) {
       const file = newFileList[0]
@@ -157,7 +166,8 @@ export const ProjectModel: React.FC<ProjectModelProps> = ({ isOpen, onClose, dat
             ? values.color
             : `#${values.color.metaColor.r.toString(16).padStart(2, '0')}${values.color.metaColor.g.toString(16).padStart(2, '0')}${values.color.metaColor.b.toString(16).padStart(2, '0')}`,
         status: values.status,
-        image_id: uploadedImageId ? Number(uploadedImageId) : null
+        image_id: uploadedImageId ? Number(uploadedImageId) : null,
+        project_file_url: values.projectFileLink
       }
 
       if (data) {
@@ -267,6 +277,22 @@ export const ProjectModel: React.FC<ProjectModelProps> = ({ isOpen, onClose, dat
         >
           <Input
             placeholder="Enter project name"
+            style={{
+              backgroundColor: Colors.light,
+              color: Colors.darkGreen,
+              borderColor: Colors.muted
+            }}
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="projectFileLink"
+          label={<span style={{ color: Colors.light }}>Project File Link</span>}
+          rules={[{ required: true, message: 'Please input project file link!' }]}
+          style={{ color: Colors.light }}
+        >
+          <Input
+            placeholder="Enter project file link"
             style={{
               backgroundColor: Colors.light,
               color: Colors.darkGreen,

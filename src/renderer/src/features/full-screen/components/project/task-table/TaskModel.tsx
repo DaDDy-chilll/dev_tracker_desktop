@@ -1,12 +1,21 @@
-import { JSX, useState, useEffect } from 'react'
 import { Colors } from '@renderer/constants/Colors'
+import {
+  TaskCategory,
+  TaskPriority,
+  TaskStatus,
+  useCreateTask,
+  useUpdateTask
+} from '@renderer/features/full-screen/services'
+import { Task } from '@renderer/features/full-screen/services/tasks/task.type'
+import { useFullScreenState } from '@renderer/layouts/full-screen/useFullScreenState'
+import { DatePicker } from 'antd'
+import dayjs from 'dayjs'
 import { X } from 'lucide-react'
+import { JSX, useEffect, useState } from 'react'
 import Modal from 'react-modal'
 import { PulseLoader } from 'react-spinners'
-import { TaskPriority, TaskStatus, useCreateTask, useUpdateTask } from '../../services'
-import { useFullScreenState } from '@renderer/layouts/full-screen/useFullScreenState'
-import { Task } from '../../services/tasks/task.type'
 
+const { RangePicker } = DatePicker
 // Set the app element for accessibility
 Modal.setAppElement('#root')
 
@@ -14,6 +23,7 @@ interface TaskModelProps {
   isOpen: boolean
   onClose: () => void
   data?: Task | null
+  projectDir: string
 }
 
 // Custom styles for the modal
@@ -38,14 +48,6 @@ const customStyles = {
   }
 }
 
-const statusOptions = [
-  { value: TaskStatus.NOT_STARTED, label: 'Not Started' },
-  { value: TaskStatus.IN_PROGRESS, label: 'In Progress' },
-  { value: TaskStatus.IN_REVIEW, label: 'Review' },
-  { value: TaskStatus.IN_TEST, label: 'Test' },
-  { value: TaskStatus.DONE, label: 'Done' }
-]
-
 const priorityOptions = [
   { value: TaskPriority.LOW, label: 'Low' },
   { value: TaskPriority.MEDIUM, label: 'Medium' },
@@ -53,31 +55,51 @@ const priorityOptions = [
   { value: TaskPriority.URGENT, label: 'Urgent' }
 ]
 
-export const TaskModel = ({ isOpen, onClose, data }: TaskModelProps): JSX.Element => {
+const categoryOptions = [
+  { value: TaskCategory.FEAUTURE, label: 'Feature' },
+  { value: TaskCategory.BUG, label: 'Bug' },
+  { value: TaskCategory.REFACTOR, label: 'Refactor' },
+  { value: TaskCategory.TEST, label: 'Test' },
+  { value: TaskCategory.ERROR, label: 'Error' }
+]
+
+export const TaskModel = ({ isOpen, onClose, data, projectDir }: TaskModelProps): JSX.Element => {
   const [taskName, setTaskName] = useState('')
   const [duration, setDuration] = useState<string>('')
+  const [startDate, setStartDate] = useState<string>('')
+  const [endDate, setEndDate] = useState<string>('')
   const [status, setStatus] = useState<TaskStatus>(TaskStatus.NOT_STARTED)
   const [priority, setPriority] = useState<TaskPriority>(TaskPriority.MEDIUM)
+  const [category, setCategory] = useState<TaskCategory>(TaskCategory.FEAUTURE)
+  const [branchName, setBranchName] = useState('')
   const { mutateAsync: createTask, isPending: isCreating } = useCreateTask()
   const { mutateAsync: updateTask, isPending: isUpdating } = useUpdateTask()
   const { selectedProjectId } = useFullScreenState()
 
-  console.log(selectedProjectId)
   // Initialize form with task data if in edit mode
   useEffect(() => {
     if (data) {
+      console.log('data', data)
       setTaskName(data.name)
       setDuration(data.due_time ? new Date(data.due_time).toISOString().slice(0, 16) : '')
-      setStatus(data.status)
-      setPriority(data.priority)
+      setStartDate(data.start_date ? new Date(data.start_date).toISOString().slice(0, 16) : '')
+      setEndDate(data.end_date ? new Date(data.end_date).toISOString().slice(0, 16) : '')
+      setStatus(data.status as TaskStatus)
+      setPriority(data.priority as TaskPriority)
+      setCategory((data.category as TaskCategory) || TaskCategory.FEAUTURE)
+      setBranchName(data.branch_name || '')
     } else {
-      // Reset form for create mode
+      // Reset form for new task
       setTaskName('')
       setDuration('')
+      setStartDate('')
+      setEndDate('')
       setStatus(TaskStatus.NOT_STARTED)
       setPriority(TaskPriority.MEDIUM)
+      setCategory(TaskCategory.FEAUTURE)
+      setBranchName('')
     }
-  }, [data, isOpen])
+  }, [data])
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
@@ -88,9 +110,13 @@ export const TaskModel = ({ isOpen, onClose, data }: TaskModelProps): JSX.Elemen
         due_time: new Date(duration),
         status,
         priority,
-        project_id: selectedProjectId
+        category,
+        project_id: selectedProjectId.id,
+        branch_name: branchName,
+        start_date: new Date(startDate),
+        end_date: new Date(endDate)
       }
-
+      console.log('taskData', taskData)
       if (data?.id) {
         // Update existing task
         await updateTask({
@@ -99,7 +125,11 @@ export const TaskModel = ({ isOpen, onClose, data }: TaskModelProps): JSX.Elemen
         })
       } else {
         // Create new task
-        await createTask(taskData)
+        await createTask(taskData, {
+          onSuccess: () => {
+            window.api.taskStatus.changeState(status, projectDir, category, branchName)
+          }
+        })
       }
 
       // Reset form and close modal
@@ -116,6 +146,7 @@ export const TaskModel = ({ isOpen, onClose, data }: TaskModelProps): JSX.Elemen
     setDuration('')
     setStatus(TaskStatus.NOT_STARTED)
     setPriority(TaskPriority.MEDIUM)
+    setCategory(TaskCategory.FEAUTURE)
   }
 
   const handleAfterClose = (): void => {
@@ -138,7 +169,10 @@ export const TaskModel = ({ isOpen, onClose, data }: TaskModelProps): JSX.Elemen
           <p className="text-xl font-bold" style={{ fontFamily: 'Skyer', color: Colors.primary }}>
             {isEditMode ? 'Edit Task' : 'Create New Task'}
           </p>
-          <button onClick={onClose} className="text-gray-400 hover:text-white focus:outline-none">
+          <button
+            onClick={onClose}
+            className="text-gray-400 cursor-pointer hover:text-white focus:outline-none"
+          >
             <X size={24} />
           </button>
         </div>
@@ -158,11 +192,32 @@ export const TaskModel = ({ isOpen, onClose, data }: TaskModelProps): JSX.Elemen
               id="task-name"
               value={taskName}
               onChange={(e): void => setTaskName(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-green-300"
+              className="w-full rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-green-300"
               style={{ color: Colors.light, borderRadius: 5, paddingInline: 5, paddingBlock: 10 }}
               required
             />
           </div>
+
+          {!data?.id && (
+            <div style={{ marginBottom: 20, borderBottom: '1px solid #cccccc88' }}>
+              <label
+                htmlFor="branch-name"
+                className="block text-sm font-medium text-gray-300"
+                style={{ marginBottom: 5 }}
+              >
+                Branch Name
+              </label>
+              <input
+                type="text"
+                id="branch-name"
+                value={branchName}
+                onChange={(e): void => setBranchName(e.target.value)}
+                className="w-full rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-green-300"
+                style={{ color: Colors.light, borderRadius: 5, paddingInline: 5, paddingBlock: 10 }}
+                required
+              />
+            </div>
+          )}
 
           {/* Duration (Date) */}
           <div style={{ marginBottom: 20, borderBottom: '1px solid #cccccc88' }}>
@@ -173,43 +228,29 @@ export const TaskModel = ({ isOpen, onClose, data }: TaskModelProps): JSX.Elemen
             >
               Due Date
             </label>
-            <input
-              type="datetime-local"
-              id="duration"
-              value={duration}
-              onChange={(e): void => setDuration(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-green-300"
-              style={{ color: Colors.light, borderRadius: 5, paddingInline: 5, paddingBlock: 10 }}
-              required
+            <RangePicker
+              size="large"
+              variant="borderless"
+              style={{ color: Colors.light, width: '100%' }}
+              placeholder={['Start Date', 'End Date']}
+              value={[
+                startDate ? dayjs(startDate, 'YYYY-MM-DDTHH:mm') : null,
+                endDate ? dayjs(endDate, 'YYYY-MM-DDTHH:mm') : null
+              ]}
+              onChange={(dates): void => {
+                if (dates) {
+                  setStartDate(dates[0]?.format('YYYY-MM-DDTHH:mm') || '')
+                  setEndDate(dates[1]?.format('YYYY-MM-DDTHH:mm') || '')
+                  setDuration(dates[0]?.format('YYYY-MM-DDTHH:mm') || '')
+                } else {
+                  setStartDate('')
+                  setEndDate('')
+                  setDuration('')
+                }
+              }}
+              showTime={{ format: 'HH:mm' }}
+              format="YYYY-MM-DD HH:mm"
             />
-          </div>
-
-          {/* Status */}
-          <div style={{ marginBottom: 20, borderBottom: '1px solid #cccccc88' }}>
-            <label
-              htmlFor="status"
-              className="block text-sm font-medium text-gray-300"
-              style={{ marginBottom: 5 }}
-            >
-              Status
-            </label>
-            <select
-              id="status"
-              value={status}
-              onChange={(e): void => setStatus(e.target.value as TaskStatus)}
-              style={{ borderRadius: 5, paddingInline: 5, paddingBlock: 10, color: Colors.light }}
-              className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-green-300"
-            >
-              {statusOptions.map((option) => (
-                <option
-                  key={option.value}
-                  value={option.value}
-                  style={{ color: Colors.light, backgroundColor: Colors.darkGreen }}
-                >
-                  {option.label}
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* Priority */}
@@ -226,9 +267,37 @@ export const TaskModel = ({ isOpen, onClose, data }: TaskModelProps): JSX.Elemen
               value={priority}
               onChange={(e): void => setPriority(e.target.value as TaskPriority)}
               style={{ borderRadius: 5, paddingInline: 5, paddingBlock: 10, color: Colors.light }}
-              className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-green-300"
+              className="w-full  rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-green-300"
             >
               {priorityOptions.map((option) => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                  style={{ color: Colors.light, backgroundColor: Colors.darkGreen }}
+                >
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Category */}
+          <div style={{ marginBottom: 20, borderBottom: '1px solid #cccccc88' }}>
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium text-gray-300"
+              style={{ marginBottom: 5 }}
+            >
+              Category
+            </label>
+            <select
+              id="category"
+              value={category}
+              onChange={(e): void => setCategory(e.target.value as TaskCategory)}
+              style={{ borderRadius: 5, paddingInline: 5, paddingBlock: 10, color: Colors.light }}
+              className="w-full  rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-green-300"
+            >
+              {categoryOptions.map((option) => (
                 <option
                   key={option.value}
                   value={option.value}

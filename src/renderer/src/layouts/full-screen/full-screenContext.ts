@@ -8,8 +8,16 @@ export interface FullScreenLayoutType {
   setDockType: React.Dispatch<React.SetStateAction<'dashboard' | 'kanban'>>
   isViewPrice: boolean
   priceToggle: () => void
-  selectedProjectId: number
-  setSelectedProjectId: React.Dispatch<React.SetStateAction<number>>
+  selectedProjectId: {
+    id: number
+    projectDir: string
+  }
+  setSelectedProjectId: React.Dispatch<
+    React.SetStateAction<{
+      id: number
+      projectDir: string
+    }>
+  >
 }
 
 // Create context with proper typing and default values
@@ -18,6 +26,9 @@ export const FullScreenLayoutContext = createContext<FullScreenLayoutType>({
   setDockType: () => {},
   isViewPrice: false,
   priceToggle: () => {},
-  selectedProjectId: 0,
+  selectedProjectId: {
+    id: 0,
+    projectDir: ''
+  },
   setSelectedProjectId: () => {}
 })

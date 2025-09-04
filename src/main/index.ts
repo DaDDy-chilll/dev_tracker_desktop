@@ -1,6 +1,9 @@
-import { app, shell, BrowserWindow, ipcMain, screen } from 'electron'
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { electronApp, is, optimizer } from '@electron-toolkit/utils'
+import { app, BrowserWindow, ipcMain, screen, shell } from 'electron'
+import { networkInterfaces } from 'os'
 import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import './TaskStatus'
 const iconPath = join(__dirname, '../../resources/icon.png')
 
 // Window state enum to track current window state
@@ -100,6 +103,82 @@ app.whenReady().then(() => {
   // Handle window close request from renderer
   ipcMain.on('window-close', () => {
     app.quit()
+  })
+
+  ipcMain.on('get-network-interfaces', (event) => {
+    const interfaces = networkInterfaces()
+    event.sender.send('network-interfaces', interfaces)
+  })
+
+  // Handle network interface requests from renderer
+  ipcMain.handle('get-mac-address', () => {
+    try {
+      const interfaces = networkInterfaces()
+      const interfacePriority = ['enp8s0', 'eth0', 'en0', 'wlan0', 'wlp5s0', 'Wi-Fi', 'Ethernet']
+
+      // First, try to find interfaces by priority
+      for (const interfaceName of interfacePriority) {
+        const networkInterface = interfaces[interfaceName]
+        if (networkInterface) {
+          for (const net of networkInterface) {
+            if (!net.internal && net.mac && net.mac !== '00:00:00:00:00:00') {
+              return net.mac
+            }
+          }
+        }
+      }
+
+      // If no priority interface found, get the first non-internal interface with a valid MAC
+      for (const [_, networkInterface] of Object.entries(interfaces)) {
+        if (networkInterface) {
+          for (const net of networkInterface) {
+            if (!net.internal && net.mac && net.mac !== '00:00:00:00:00:00') {
+              return net.mac
+            }
+          }
+        }
+      }
+
+      return null
+    } catch (error) {
+      console.error('Error getting MAC address:', error)
+      return null
+    }
+  })
+
+  ipcMain.handle('get-local-ip', () => {
+    try {
+      const interfaces = networkInterfaces()
+      const interfacePriority = ['enp8s0', 'eth0', 'en0', 'wlan0', 'wlp5s0', 'Wi-Fi', 'Ethernet']
+
+      // First, try to find interfaces by priority
+      for (const interfaceName of interfacePriority) {
+        const networkInterface = interfaces[interfaceName]
+        if (networkInterface) {
+          for (const net of networkInterface) {
+            if (!net.internal && net.family === 'IPv4') {
+              return net.address
+            }
+          }
+        }
+      }
+
+      // If no priority interface found, get the first non-internal IPv4 address
+      for (const [_, networkInterface] of Object.entries(interfaces)) {
+        if (networkInterface) {
+          for (const net of networkInterface) {
+            if (!net.internal && net.family === 'IPv4') {
+              return net.address
+            }
+          }
+        }
+      }
+
+      return null
+    } catch (error) {
+      console.error('Error getting local IP address:', error)
+      return null
+    }
   })
 
   createWindow()

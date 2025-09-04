@@ -8,7 +8,8 @@ import {
   useQuery,
   useQueryClient
 } from '@tanstack/react-query'
-import { TaskCreate, Task, TaskUpdate } from './task.type'
+import { TaskCreate, Task, TaskUpdate, TaskStatusCount, GetTaskQuery } from './task.type'
+import { buildQuery } from '@renderer/utils'
 
 /**
  * Creates a new task
@@ -39,10 +40,9 @@ export const useCreateTask = (): UseMutationResult<ApiResponse<Task>, unknown, T
   })
 }
 
-const getTasks = async (projectId?: number): Promise<ApiResponse<Task[]>> => {
+const getTasks = async (query: GetTaskQuery): Promise<ApiResponse<Task[]>> => {
   try {
-    const url = projectId ? `${apiRoute.task.index}?projectId=${projectId}` : apiRoute.task.index
-
+    const url = `${apiRoute.task.index}?${buildQuery(query)}`
     const response = await api<Task[], Task[]>(url, {
       method: 'GET'
     })
@@ -53,11 +53,11 @@ const getTasks = async (projectId?: number): Promise<ApiResponse<Task[]>> => {
   }
 }
 
-export const useGetTasks = (projectId?: number): UseQueryResult<ApiResponse<Task[]>> => {
+export const useGetTasks = (query: GetTaskQuery): UseQueryResult<ApiResponse<Task[]>> => {
   return useQuery({
-    queryKey: ['tasks', projectId],
-    queryFn: () => getTasks(projectId),
-    enabled: !!projectId
+    queryKey: ['tasks', query],
+    queryFn: () => getTasks(query),
+    enabled: !!query
   })
 }
 
@@ -109,5 +109,24 @@ export const useDeleteTask = (): UseMutationResult<
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
     }
+  })
+}
+
+const getAllTaskCount = async (): Promise<ApiResponse<TaskStatusCount[]>> => {
+  try {
+    const response = await api<TaskStatusCount[], TaskStatusCount[]>(apiRoute.task.status, {
+      method: 'GET'
+    })
+    return response
+  } catch (error) {
+    console.error('Error Get Task Status Count:', error)
+    throw error
+  }
+}
+
+export const useGetAllTaskCount = (): UseQueryResult<ApiResponse<TaskStatusCount[]>> => {
+  return useQuery({
+    queryKey: ['all-task-count'],
+    queryFn: getAllTaskCount
   })
 }

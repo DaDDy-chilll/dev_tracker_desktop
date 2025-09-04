@@ -7,12 +7,11 @@ import {
   SortingState,
   useReactTable
 } from '@tanstack/react-table'
-import { message } from 'antd'
 import { compareDesc } from 'date-fns'
 import { ArrowDownWideNarrow, Plus } from 'lucide-react'
 import { JSX, useEffect, useMemo, useState } from 'react'
-import { Task, useGetTasks } from '../../services'
-import { ProjectTableLoading } from './ProjectLoading'
+import { Task, useGetTasks } from '../../../services'
+import { ProjectTableLoading } from '../project-list/ProjectLoading'
 import { getTaskColumns } from './TaskColumns'
 import { TaskModel } from './TaskModel'
 
@@ -21,13 +20,12 @@ export const ProjectsTasksTable = (): JSX.Element => {
   const [tasks, setTasks] = useState<Task[]>([])
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const { selectedProjectId } = useFullScreenState()
-  const { data, isLoading } = useGetTasks(selectedProjectId)
+  const { data, isLoading } = useGetTasks({ projectId: selectedProjectId.id })
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'priority', desc: true },
     { id: 'due_time', desc: false },
     { id: 'status', desc: false }
   ])
-  const [messageApi, contextHolder] = message.useMessage()
 
   useEffect(() => {
     if (data && data.data) {
@@ -57,7 +55,10 @@ export const ProjectsTasksTable = (): JSX.Element => {
     setEditingTask(null)
   }
 
-  const columns = useMemo(() => getTaskColumns(messageApi), [messageApi])
+  const columns = useMemo(
+    () => getTaskColumns(selectedProjectId.projectDir),
+    [selectedProjectId.projectDir]
+  )
   const table = useReactTable({
     data: tasks,
     columns,
@@ -71,9 +72,9 @@ export const ProjectsTasksTable = (): JSX.Element => {
 
   return (
     <>
-      {contextHolder}
+      {/* {contextHolder} */}
       <div className="p-4" style={{ padding: 10, fontFamily: '"Exo", sans-serif' }}>
-        <table className="min-w-full border-collapse border border-gray-300 relative">
+        <table className="min-w-full border-collapse relative">
           <thead
             className="sticky top-0 z-10"
             style={{ borderBottom: '1px solid #10b981', backgroundColor: Colors.darkGreen }}
@@ -119,7 +120,7 @@ export const ProjectsTasksTable = (): JSX.Element => {
                   onDoubleClick={() => handleRowClick(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="border border-gray-300 w-fit py-2">
+                    <td key={cell.id} className=" w-fit py-1">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
@@ -144,7 +145,12 @@ export const ProjectsTasksTable = (): JSX.Element => {
           </tfoot>
         </table>
       </div>
-      <TaskModel isOpen={isOpen} onClose={handleCloseModal} data={editingTask} />
+      <TaskModel
+        isOpen={isOpen}
+        onClose={handleCloseModal}
+        data={editingTask}
+        projectDir={selectedProjectId.projectDir}
+      />
     </>
   )
 }

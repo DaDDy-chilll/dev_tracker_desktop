@@ -1,12 +1,12 @@
 import { Colors } from '@renderer/constants/Colors'
 import { useFullScreenState } from '@renderer/layouts/full-screen/useFullScreenState'
-import { JSX, useState } from 'react'
-import { Project, ProjectStatus } from '../../services/projects/project.type'
+import { JSX, useState, useEffect } from 'react'
+import { Project, ProjectStatus } from '@renderer/features/full-screen/services/projects/project.type'
 import { formatDate } from 'date-fns'
 import { getImageUrl } from '@renderer/utils'
 import { Trash2 } from 'lucide-react'
-import { useDeleteProject } from '../../services/projects/project.service'
-import { ProjectDeleteConfirmModal } from './ProjectDeleteConfirmModel'
+import { useDeleteProject } from '@renderer/features/full-screen/services/projects/project.service'
+import ProjectDeleteConfirmModal from './ProjectDeleteConfirmModel'
 
 type ProjectListItemProps = {
   project: Project
@@ -21,9 +21,25 @@ export const ProjectListItem = ({
 }: ProjectListItemProps): JSX.Element => {
   const { selectedProjectId } = useFullScreenState()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
   const { mutateAsync: deleteProject, isPending } = useDeleteProject()
+  const isActive = project.id === selectedProjectId.id
 
-  const isActive = project.id === selectedProjectId
+  useEffect(() => {
+    const loadImageUrl = async (): Promise<void> => {
+      if (project.image_id && project.image?.url) {
+        try {
+          const url = await getImageUrl(project.image.url)
+          setImageUrl(url)
+        } catch (error) {
+          console.error('Failed to load image URL:', error)
+          setImageUrl(null)
+        }
+      }
+    }
+
+    loadImageUrl()
+  }, [project.image_id, project.image?.url])
 
   const handleDeleteClick = (e: React.MouseEvent): void => {
     e.stopPropagation()
@@ -51,7 +67,7 @@ export const ProjectListItem = ({
         onClick={click}
         onDoubleClick={() => onDoubleClick(project)}
       >
-        <div className="" style={{ padding: 10 }}>
+        <div className="" style={{ padding: 5 }}>
           <div className="flex flex-col items-start justify-between mb-2">
             <div className="flex items-center gap-2 justify-between w-full">
               <div className="flex items-center gap-2 ">
@@ -69,7 +85,7 @@ export const ProjectListItem = ({
                 >
                   {project.image_id ? (
                     <img
-                      src={getImageUrl(project.image.url)}
+                      src={imageUrl || ''}
                       style={{ width: '100%', height: '100%' }}
                       className="object-contain rounded-sm"
                       crossOrigin="anonymous"

@@ -15,6 +15,35 @@ const api = {
     close: (): void => {
       ipcRenderer.send('window-close')
     }
+  },
+
+  /**
+   * Network interface methods for security headers
+   */
+  network: {
+    // Get MAC address from main process
+    getMacAddress: (): Promise<string | null> => {
+      return ipcRenderer.invoke('get-mac-address')
+    },
+    // Get local IP address from main process
+    getLocalIp: (): Promise<string | null> => {
+      return ipcRenderer.invoke('get-local-ip')
+    }
+  },
+  taskStatus: {
+    // Send task status request to main process
+    changeState: (
+      status: string,
+      projectDir: string,
+      category: string,
+      branchName: string
+    ): void => {
+      ipcRenderer.send('task-change-status', status, projectDir, category, branchName)
+    },
+    // Close the application
+    close: (): void => {
+      ipcRenderer.send('task-close')
+    }
   }
 }
 

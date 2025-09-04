@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Colors } from '@renderer/constants/Colors'
+import { useGetAllProjectStatus } from '@renderer/features/full-screen/services'
 import { RectangleEllipsis } from 'lucide-react'
 import { JSX } from 'react'
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
-import { useGetAllProjectStatus } from '../../services'
 
 interface ProjectData {
   name: string
@@ -42,18 +42,10 @@ export const ProjectTasksChart = (): JSX.Element => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
       return (
-        <div
-          style={{
-            backgroundColor: Colors.darkGreen,
-            padding: '10px',
-            border: `1px solid ${Colors.muted}`,
-            borderRadius: '4px'
-          }}
-        >
-          <p style={{ margin: 0, color: data.color }}>{data.name}</p>
-          <p style={{ margin: '5px 0 0 0', color: Colors.primary }}>
-            Tasks: {data.count} ({data.percentage})
-          </p>
+        <div className={`flex flex-row items-center gap-2 bg-gray-900 p-2 rounded-md`}>
+          <div className="w-3 h-3 rounded-xs" style={{ backgroundColor: data.fill }} />
+          <span className="text-sm block text-gray-400">{data.name}</span>
+          <span className="text-sm font-bold text-white">{data.count}</span>
         </div>
       )
     }
@@ -165,12 +157,14 @@ export const ProjectTasksChart = (): JSX.Element => {
               cy="50%"
               labelLine={false}
               label={({ percent }: any) => `${(percent * 100).toFixed(0)}%`}
-              outerRadius={80}
+              innerRadius="60%"
+              outerRadius="90%"
               fill="#8884d8"
               dataKey="count"
+              paddingAngle={3}
             >
               {pieData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
+                <Cell key={`cell-${index}`} fill={entry.color} stroke={entry.color}  />
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />

@@ -52,6 +52,32 @@ export class ApiError extends Error {
   }
 }
 
+// Function to get MAC address via Electron IPC
+const getMacAddress = async (): Promise<string | null> => {
+  try {
+    if (window.api?.network?.getMacAddress) {
+      return await window.api.network.getMacAddress()
+    }
+    return null
+  } catch (error) {
+    console.error('Error getting MAC address:', error)
+    return null
+  }
+}
+
+// Function to get the local IP address via Electron IPC
+const getLocalIpAddress = async (): Promise<string | null> => {
+  try {
+    if (window.api?.network?.getLocalIp) {
+      return await window.api.network.getLocalIp()
+    }
+    return null
+  } catch (error) {
+    console.error('Error getting local IP address:', error)
+    return null
+  }
+}
+
 // Create axios instance with default config
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -60,6 +86,37 @@ const axiosInstance = axios.create({
     Accept: 'application/json'
   }
 })
+
+// Add request interceptor to handle authentication and security headers
+axiosInstance.interceptors.request.use(
+  async (config) => {
+    // Get token from electron-store instead of localStorage
+    // const token = store.get('token')
+    // if (token) {
+    //   config.headers.Authorization = `Bearer ${token}`
+    // }
+
+    // Add security headers for backend middleware verification
+    const macAddress = await getMacAddress()
+    const localIp = await getLocalIpAddress()
+
+    if (macAddress) {
+      config.headers['x-mac-address'] = macAddress
+    }
+
+    if (localIp) {
+      config.headers['x-client-ip'] = localIp
+    }
+
+    // Add device identification header
+    config.headers['x-device-type'] = 'dev-track-desktop'
+
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
 
 // Check network connectivity by pinging our own API server
 const checkNetworkConnectivity = async (): Promise<boolean> => {
@@ -79,21 +136,6 @@ const checkNetworkConnectivity = async (): Promise<boolean> => {
     return false
   }
 }
-
-// Add request interceptor to handle authentication
-// axiosInstance.interceptors.request.use(
-//   async (config) => {
-//     // Get token from electron-store instead of localStorage
-//     const token = store.get('token')
-//     if (token) {
-//       config.headers.Authorization = `Bearer ${token}`
-//     }
-//     return config
-//   },
-//   (error) => {
-//     return Promise.reject(error)
-//   }
-// )
 
 export const api = async <T = unknown, R = unknown>(
   endpoint: string,
@@ -132,12 +174,21 @@ export const api = async <T = unknown, R = unknown>(
       axiosConfig.data = file
     }
 
+    // Handle binary responses (images, files)
+    if (headers && headers['Accept'] && headers['Accept'].includes('image/')) {
+      axiosConfig.responseType = 'arraybuffer'
+    }
+
     try {
       // Make the request with axios
       const response: AxiosResponse = await axiosInstance(axiosConfig)
 
       // Return successful response
-      return { success: true, data: response.data }
+      if (axiosConfig.responseType === 'arraybuffer') {
+        return { success: true, data: Buffer.from(response.data) }
+      } else {
+        return { success: true, data: response.data }
+      }
     } catch (error) {
       // Handle axios errors
       if (axios.isAxiosError(error)) {

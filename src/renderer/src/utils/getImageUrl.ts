@@ -1,3 +1,4 @@
 export const getImageUrl = (image: string): string => {
-  return `${process.env.NODE_ENV === 'development' ? 'http://localhost:5001' : 'http://dev-track-api.myancare'}${image}`
+  const isDevelopment = import.meta.env.DEV
+  return `${isDevelopment ? 'http://localhost:5001/images' : 'http://dev-track-api.myancare/images'}${image}`
 }

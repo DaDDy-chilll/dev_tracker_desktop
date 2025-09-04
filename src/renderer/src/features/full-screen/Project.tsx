@@ -8,7 +8,7 @@ import {
   TaskProgress,
   TaskTimeline
 } from './components/project'
-import { ProjectsTasksTable } from './components/project/ProjectsTasksTable'
+import { ProjectsTasksTable } from './components/project/task-table/ProjectsTasksTable'
 
 const Project = (): JSX.Element => {
   const { dockType } = useFullScreenState()

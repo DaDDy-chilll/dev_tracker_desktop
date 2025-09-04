@@ -16,6 +16,7 @@ export interface Project {
   task_count?: number | string
   member_count?: number | string
   created_at?: string
+  project_file_url?: string
 }
 
 export enum ProjectStatus {
@@ -33,6 +34,7 @@ export interface ProjectCreate {
   status: ProjectStatus
   color?: string
   member_count?: number
+  project_file_url?: string
 }
 
 export interface ImageUpload {
