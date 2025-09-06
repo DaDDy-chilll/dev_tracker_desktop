@@ -16,7 +16,6 @@ export const ProjectLists = (): JSX.Element => {
   const { data, isLoading } = useGetProjects()
   const { setSelectedProjectId } = useFullScreenState()
 
-  console.log('data----', data)
   useEffect(() => {
     if (data && data.data && data.data.length > 0) {
       setProjects(data.data)
@@ -65,7 +64,6 @@ export const ProjectLists = (): JSX.Element => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects])
 
-  console.log('project (sorted)', sortedProjects)
 
   return (
     <>

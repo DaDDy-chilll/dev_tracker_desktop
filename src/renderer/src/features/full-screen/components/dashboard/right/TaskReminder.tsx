@@ -102,7 +102,6 @@ export const TaskReminder = (): JSX.Element => {
           displayScrollbar={false}
           showGradients={false}
           itemClassName="p-0"
-          onItemSelect={(_, index) => console.log(`Selected reminder ${index}`)}
           initialSelectedIndex={-1}
           renderItem={(_, index) => {
             const reminder = reminders[index]

@@ -78,7 +78,6 @@ app.whenReady().then(() => {
   ipcMain.on('window-state-change', (_, direction: 'minimize' | 'maximize' | 'tiny') => {
     const mainWindow = BrowserWindow.getAllWindows()[0]
     if (!mainWindow) return
-    console.log('direction', direction)
 
     // Convert string to WindowState enum
     let windowState: WindowState
@@ -214,7 +213,6 @@ function setWindowState(window: BrowserWindow, state: WindowState): void {
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
 
   // Update the current window state
-  console.log('Window state changed to:', state)
 
   // Send the current state to the renderer process
   window.webContents.send('window-state-updated', state)
@@ -235,7 +233,6 @@ function setWindowState(window: BrowserWindow, state: WindowState): void {
         y: 40
       })
       // Log the actual bounds after setting
-      console.log('Tiny window bounds:', window.getBounds())
       break
 
     case WindowState.MINIMIZE:
@@ -249,7 +246,6 @@ function setWindowState(window: BrowserWindow, state: WindowState): void {
         x: 10,
         y: 40
       })
-      console.log('Minimize window bounds:', window.getBounds())
       break
 
     case WindowState.MAXIMIZE:
@@ -257,7 +253,6 @@ function setWindowState(window: BrowserWindow, state: WindowState): void {
       // Make window resizable again before going fullscreen
       window.setResizable(true)
       window.setFullScreen(true)
-      console.log('Maximize window state set to fullscreen')
       break
   }
 }

@@ -158,7 +158,7 @@ export const ProjectTasksChart = (): JSX.Element => {
               labelLine={false}
               label={({ percent }: any) => `${(percent * 100).toFixed(0)}%`}
               innerRadius="60%"
-              outerRadius="90%"
+              outerRadius="80%"
               fill="#8884d8"
               dataKey="count"
               paddingAngle={3}

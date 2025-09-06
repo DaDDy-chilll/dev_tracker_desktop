@@ -71,7 +71,6 @@ export const StatusComponent = ({
       data: { status: string; branch: string; output: string }
     ): void => {
       messageApi.success(`Successfully switched to branch: ${data.branch}`, 3)
-      console.log('Git checkout success:', data)
     }
 
     const handleGitError = (_event: any, error: string): void => {
@@ -91,7 +90,6 @@ export const StatusComponent = ({
   }, [messageApi])
 
   const handleStatusChange = async (newStatus: string): Promise<void> => {
-    console.log('category@@@@@', category)
     if (id && newStatus !== status) {
       try {
         await updateTask(
@@ -108,7 +106,6 @@ export const StatusComponent = ({
               }
             },
             onError: (error) => {
-              console.log(error)
               messageApi.error(`Failed to update task status ${error}`, 3)
             }
           }

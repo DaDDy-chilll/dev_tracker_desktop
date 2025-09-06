@@ -1,5 +1,6 @@
 import { Colors } from '@renderer/constants/Colors'
-import { JSX } from 'react'
+import { useGetProjects } from '@renderer/features/full-screen/services'
+import { JSX, useMemo } from 'react'
 import {
   AreaChart,
   Area,
@@ -11,34 +12,115 @@ import {
   Legend
 } from 'recharts'
 
-// Sample data for the projects chart
-const projectData = [
-  { month: 'Jan', japanJob: 15, shopZar: 65, ratisInventory: 50 },
-  { month: 'Feb', japanJob: 60, shopZar: 90, ratisInventory: 75 },
-  { month: 'Mar', japanJob: 40, shopZar: 65, ratisInventory: 60 },
-  { month: 'Apr', japanJob: 30, shopZar: 35, ratisInventory: 25 },
-  { month: 'May', japanJob: 55, shopZar: 85, ratisInventory: 40 },
-  { month: 'Jun', japanJob: 75, shopZar: 55, ratisInventory: 65 },
-  { month: 'Jul', japanJob: 75, shopZar: 75, ratisInventory: 75 },
-  { month: 'Aug', japanJob: 75, shopZar: 75, ratisInventory: 75 },
-  { month: 'Sep', japanJob: 75, shopZar: 75, ratisInventory: 75 },
-  { month: 'Oct', japanJob: 75, shopZar: 75, ratisInventory: 75 },
-  { month: 'Nov', japanJob: 75, shopZar: 75, ratisInventory: 75 },
-  { month: 'Dec', japanJob: 75, shopZar: 75, ratisInventory: 75 }
-]
-
-// Colors for the areas
-const japanJobColor = '#8b5cf6' // Purple color
-const shopZarColor = '#38bdf8' // Light blue color
-const ratisInventoryColor = '#fb7185' // Pink/red color
+// Helper function to sanitize names for use as CSS IDs and data keys
+const sanitizeName = (name: string): string => {
+  return name.replace(/[^a-zA-Z0-9]/g, '')
+}
 
 export const ProjectChart = (): JSX.Element => {
+  const { data: projectsResponse = { data: [] } } = useGetProjects()
+  const projects = projectsResponse.data || []
+  console.log('projects******', projects)
+
+  const projectColors = useMemo(() => {
+    console.log('projects', projects)
+    return projects.map((project) => project.color || '#8b5cf6') // Fallback to purple if no color
+  }, [projects])
+
+  // Transform projects data to show task counts by month
+  const transformProjectsData = useMemo(() => {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ]
+
+    const monthlyData = months.map((month) => {
+      const entry = { month }
+      projects.forEach((project) => {
+        // Use sanitized name as key
+        entry[sanitizeName(project.name)] = 0
+      })
+      return entry
+    })
+
+    projects.forEach((project) => {
+      const tasks = project.tasks || []
+      console.log(`Project ${project.name} has ${tasks.length} tasks`)
+
+      tasks.forEach((task) => {
+        console.log('task', task)
+        if (task.start_date) {
+          try {
+            const dueDate = new Date(task.start_date)
+            const monthIndex = dueDate.getMonth()
+            const monthName = months[monthIndex]
+
+            const monthEntry = monthlyData.find((m) => m.month === monthName)
+            if (monthEntry) {
+              const sanitizedProjectName = sanitizeName(project.name)
+              monthEntry[sanitizedProjectName] = (monthEntry[sanitizedProjectName] || 0) + 1
+            }
+          } catch (error) {
+            console.error('Error processing task date:', task.start_date, error)
+          }
+        }
+      })
+    })
+
+    return monthlyData
+  }, [projects])
+
+  console.log('transformProjectsData', transformProjectsData)
+
+  // Generate gradient definitions dynamically
+  const gradientDefs = useMemo(() => {
+    return projects.map((project, index) => (
+      <linearGradient
+        key={project.id}
+        id={`color${sanitizeName(project.name)}`}
+        x1="0"
+        y1="0"
+        x2="0"
+        y2="1"
+      >
+        <stop offset="5%" stopColor={projectColors[index]} stopOpacity={0.4} />
+        <stop offset="95%" stopColor={projectColors[index]} stopOpacity={0.1} />
+      </linearGradient>
+    ))
+  }, [projects, projectColors])
+
+  // Generate area components dynamically
+  const areaComponents = useMemo(() => {
+    return projects.map((project, index) => (
+      <Area
+        key={project.id}
+        type="monotone"
+        dataKey={sanitizeName(project.name)}
+        name={project.name}
+        stroke={projectColors[index]}
+        strokeWidth={2}
+        fillOpacity={1}
+        fill={`url(#color${sanitizeName(project.name)})`}
+        activeDot={{ r: 6, fill: projectColors[index], stroke: '#fff', strokeWidth: 2 }}
+      />
+    ))
+  }, [projects, projectColors])
+
   return (
     <div
       className="w-[50%] rounded-lg h-[30vh]"
       style={{
         backgroundColor: Colors.darkGreen,
-        paddingBlock: 10,
         fontFamily: '"Exo", sans-serif'
       }}
     >
@@ -52,21 +134,8 @@ export const ProjectChart = (): JSX.Element => {
       </div>
 
       <ResponsiveContainer width="100%" height="95%">
-        <AreaChart data={projectData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id="colorJapanJob" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={japanJobColor} stopOpacity={0.4} />
-              <stop offset="95%" stopColor={japanJobColor} stopOpacity={0.1} />
-            </linearGradient>
-            <linearGradient id="colorShopZar" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={shopZarColor} stopOpacity={0.4} />
-              <stop offset="95%" stopColor={shopZarColor} stopOpacity={0.1} />
-            </linearGradient>
-            <linearGradient id="colorRatisInventory" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={ratisInventoryColor} stopOpacity={0.4} />
-              <stop offset="95%" stopColor={ratisInventoryColor} stopOpacity={0.1} />
-            </linearGradient>
-          </defs>
+        <AreaChart data={transformProjectsData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+          <defs>{gradientDefs}</defs>
 
           <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
           <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af' }} />
@@ -74,11 +143,10 @@ export const ProjectChart = (): JSX.Element => {
             axisLine={false}
             tickLine={false}
             tick={{ fill: '#9ca3af' }}
-            domain={[0, 100]}
-            ticks={[0, 20, 40, 60, 80, 100]}
+            // Remove fixed domain to allow dynamic values
+            domain={[0, 'dataMax + 10']}
           />
           <Tooltip
-            formatter={(value) => [`${value}%`, undefined]}
             contentStyle={{
               backgroundColor: Colors.accent1,
               borderRadius: '8px',
@@ -87,36 +155,7 @@ export const ProjectChart = (): JSX.Element => {
             }}
           />
 
-          <Area
-            type="monotone"
-            dataKey="japanJob"
-            name="Japan Job"
-            stroke={japanJobColor}
-            strokeWidth={2}
-            fillOpacity={1}
-            fill="url(#colorJapanJob)"
-            activeDot={{ r: 6, fill: japanJobColor, stroke: '#fff', strokeWidth: 2 }}
-          />
-          <Area
-            type="monotone"
-            dataKey="shopZar"
-            name="Shop Zar"
-            stroke={shopZarColor}
-            strokeWidth={2}
-            fillOpacity={1}
-            fill="url(#colorShopZar)"
-            activeDot={{ r: 6, fill: shopZarColor, stroke: '#fff', strokeWidth: 2 }}
-          />
-          <Area
-            type="monotone"
-            dataKey="ratisInventory"
-            name="Ratis Inventory"
-            stroke={ratisInventoryColor}
-            strokeWidth={2}
-            fillOpacity={1}
-            fill="url(#colorRatisInventory)"
-            activeDot={{ r: 6, fill: ratisInventoryColor, stroke: '#fff', strokeWidth: 2 }}
-          />
+          {areaComponents}
 
           <Legend
             verticalAlign="bottom"

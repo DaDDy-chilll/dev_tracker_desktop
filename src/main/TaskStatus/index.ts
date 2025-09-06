@@ -15,10 +15,6 @@ const statusToBranchMap: Record<string, string> = {
 ipcMain.on(
   'task-change-status',
   async (event, status: string, projectDir: string, category: string, branchName: string) => {
-    console.log('Task status changed to:', status)
-    console.log('targetBranch@@@@@', statusToBranchMap[status] || 'main')
-    console.log('projectDir@@@@@', projectDir)
-    console.log('category@@@@@', category)
 
     try {
       const targetBranch = `${category}/${branchName}`
@@ -57,15 +53,12 @@ ipcMain.on(
 
       // Execute commands one by one
       for (const cmd of commands) {
-        console.log('Executing command:', cmd)
         const { stdout, stderr } = await execAsync(cmd, { shell: '/bin/bash' })
 
         if (stderr && (stderr.includes('error') || stderr.includes('fatal'))) {
           throw new Error(stderr)
         }
 
-        if (stdout) console.log('Command output:', stdout)
-        if (stderr) console.log('Command stderr:', stderr)
       }
 
       // Send success response

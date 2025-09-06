@@ -1,9 +1,9 @@
+import * as Tooltip from '@radix-ui/react-tooltip'
 import { Colors } from '@renderer/constants/Colors'
 import { useGetTasks } from '@renderer/features/full-screen/services'
-import type { Task } from '@renderer/features/full-screen/services/tasks/task.type'
+import { TaskStatus } from '@renderer/features/full-screen/services/tasks/task.type'
 import { addDays, format, startOfWeek } from 'date-fns'
 import { JSX } from 'react'
-import * as Tooltip from '@radix-ui/react-tooltip'
 
 export const TaskTimeline = (): JSX.Element => {
   const now = new Date()
@@ -16,7 +16,6 @@ export const TaskTimeline = (): JSX.Element => {
       dayName: format(date, 'EEE')
     }
   })
-
   // Current progress day (the day with the marker)
   const currentDate = new Date()
   const currentDay = currentDate.getDate()
@@ -25,8 +24,10 @@ export const TaskTimeline = (): JSX.Element => {
 
   const { data: tasks = [] } = useGetTasks({
     start_date: startOfWeekDate,
-    end_date: endOfWeekDate
+    end_date: endOfWeekDate,
+    status: [TaskStatus.NOT_STARTED, TaskStatus.IN_PROGRESS]
   })
+
 
   return (
     <div
@@ -61,44 +62,46 @@ export const TaskTimeline = (): JSX.Element => {
         {/* Timeline content */}
         <div className="relative h-full pb-7">
           {/* Tasks */}
-          <div className="relative h-[90%]  overflow-auto">
+          <div className="relative h-[90%]  overflow-x-hidden">
             {tasks?.data?.map((task, index) => {
               // Parse the dates
+
               const startDate = task.start_date ? new Date(task.start_date) : new Date()
               const endDate = task.end_date ? new Date(task.end_date) : new Date()
 
-              // Convert dates to timestamps for comparison
-              const startTime = startDate.getTime()
-              const endTime = endDate.getTime()
+              // Convert task dates to timestamps at start of day for comparison
+              const taskStartTime = new Date(startDate)
+              taskStartTime.setHours(0, 0, 0, 0)
+              const taskEndTime = new Date(endDate)
+              taskEndTime.setHours(23, 59, 59, 999)
 
               // Find the start and end indices in the days array
-              const startDayIndex = days.findIndex((day) => {
+              let startDayIndex = -1
+              let endDayIndex = -1
+
+              days.forEach((day, index) => {
                 const dayStart = new Date(day.date)
                 dayStart.setHours(0, 0, 0, 0)
                 const dayEnd = new Date(dayStart)
                 dayEnd.setHours(23, 59, 59, 999)
-                return startTime <= dayEnd.getTime()
+
+                // Check if task overlaps with this day
+                if (taskStartTime <= dayEnd && taskEndTime >= dayStart) {
+                  if (startDayIndex === -1) startDayIndex = index
+                  endDayIndex = index
+                }
               })
 
-              const endDayIndex = days.findLastIndex((day) => {
-                const dayStart = new Date(day.date)
-                dayStart.setHours(0, 0, 0, 0)
-                const dayEnd = new Date(dayStart)
-                dayEnd.setHours(23, 59, 59, 999)
-                return endTime >= dayStart.getTime()
-              })
+              // If no overlap found, default to first day
+              if (startDayIndex === -1) startDayIndex = 0
+              if (endDayIndex === -1) endDayIndex = days.length - 1
 
               // Calculate position and width based on days
-              const startPosition =
-                startDayIndex >= 0 ? (startDayIndex / (days.length - 1)) * 100 : 0
-              const visibleEndIndex = endDayIndex >= 0 ? endDayIndex : days.length - 1
-              const width =
-                startDayIndex >= 0 && endDayIndex >= 0
-                  ? ((visibleEndIndex - startDayIndex + 1) / days.length) * 100
-                  : 0
+              const startPosition = Math.max(0, (startDayIndex / (days.length - 1)) * 100)
+              // const visibleEndIndex = endDayIndex >= 0 ? endDayIndex : days.length - 1
+              const width = ((endDayIndex - startDayIndex + 1) / days.length) * 100
 
               const topPosition = index * 60 + 10 // Stagger tasks vertically
-
               return (
                 <Tooltip.Provider key={task.id}>
                   <Tooltip.Root>
@@ -153,19 +156,16 @@ export const TaskTimeline = (): JSX.Element => {
                 </Tooltip.Provider>
               )
             })}
-
-            {/* Current day indicator */}
-            <div
-              className="absolute top-2 bottom-0 w-0.5 bg-[#10b981] z-40"
-              style={{
-                left: `${(days.findIndex((d) => d.dayOfMonth === currentDay.toString()) / (days.length - 1)) * 100}%`,
-                height: '110%'
-              }}
-            >
-              <div className="absolute -top-1.5 -left-1.5 w-3 h-3 rounded-full bg-[#10b981] flex items-center justify-center"></div>
-            </div>
           </div>
-
+          {/* Current day indicator */}
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-[#10b981] z-40"
+            style={{
+              left: `${(days.findIndex((d) => d.dayOfMonth === currentDay.toString()) / (days.length - 1)) * 100}%`
+            }}
+          >
+            <div className="absolute -top-1.5 -left-1.5 w-3 h-3 rounded-full bg-[#10b981]"></div>
+          </div>
           {/* Day numbers */}
           <div className="absolute bottom-0 left-0 right-0 flex justify-between bg-[#565656] z-50 p-1 rounded-md">
             {days.map((day) => (

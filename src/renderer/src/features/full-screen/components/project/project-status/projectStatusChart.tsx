@@ -1,8 +1,7 @@
 import { Colors } from '@renderer/constants/Colors'
 import { JSX } from 'react'
-import { RadialBarChart, RadialBar, Legend, ResponsiveContainer, Tooltip } from 'recharts'
+import { Legend, RadialBar, RadialBarChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { useGetAllTaskCount } from '../../../services'
-import ProjectStatusLabel, { ChartTooltip, ChartTooltipContent } from './ProjectStatusLabel'
 
 interface StatusDatum {
   name: string
@@ -12,6 +11,7 @@ interface StatusDatum {
 
 export const ProjectStatusChart = (): JSX.Element => {
   const { data } = useGetAllTaskCount()
+
   const legendStyle = {
     top: '50%',
     right: 0,

@@ -16,12 +16,6 @@ export const DateRange: React.FC = (): JSX.Element => (
         start: 'startInput',
         end: 'endInput'
       }}
-      onFocus={(_, info) => {
-        console.log('Focus:', info.range)
-      }}
-      onBlur={(_, info) => {
-        console.log('Blur:', info.range)
-      }}
     />
   </Space>
 )

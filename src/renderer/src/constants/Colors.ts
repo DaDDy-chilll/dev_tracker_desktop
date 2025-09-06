@@ -21,5 +21,8 @@ export const Colors = {
   accent4: 'var(--accent4)',
   accent5: 'var(--accent5)',
   darkGreen: 'var(--dark-green)',
-  light: 'var(--light)'
+  light: 'var(--light)',
+  error: 'var(--error)',
+  warning: 'var(--warning)',
+  expired: 'var(--expired)'
 }

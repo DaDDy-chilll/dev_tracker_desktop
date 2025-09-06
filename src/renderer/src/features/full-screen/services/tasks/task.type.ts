@@ -71,7 +71,7 @@ export interface TaskUpdate {
 
 export interface GetTaskQuery {
   projectId?: number
-  status?: TaskStatus
+  status?: TaskStatus[]
   start_date?: Date
   end_date?: Date
 }

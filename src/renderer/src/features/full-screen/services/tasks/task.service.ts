@@ -53,11 +53,10 @@ const getTasks = async (query: GetTaskQuery): Promise<ApiResponse<Task[]>> => {
   }
 }
 
-export const useGetTasks = (query: GetTaskQuery): UseQueryResult<ApiResponse<Task[]>> => {
+export const useGetTasks = (query?: GetTaskQuery): UseQueryResult<ApiResponse<Task[]>> => {
   return useQuery({
     queryKey: ['tasks', query],
-    queryFn: () => getTasks(query),
-    enabled: !!query
+    queryFn: () => getTasks(query || {})
   })
 }
 

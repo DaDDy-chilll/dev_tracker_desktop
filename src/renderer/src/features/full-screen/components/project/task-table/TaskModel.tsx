@@ -79,7 +79,6 @@ export const TaskModel = ({ isOpen, onClose, data, projectDir }: TaskModelProps)
   // Initialize form with task data if in edit mode
   useEffect(() => {
     if (data) {
-      console.log('data', data)
       setTaskName(data.name)
       setDuration(data.due_time ? new Date(data.due_time).toISOString().slice(0, 16) : '')
       setStartDate(data.start_date ? new Date(data.start_date).toISOString().slice(0, 16) : '')
@@ -116,7 +115,6 @@ export const TaskModel = ({ isOpen, onClose, data, projectDir }: TaskModelProps)
         start_date: new Date(startDate),
         end_date: new Date(endDate)
       }
-      console.log('taskData', taskData)
       if (data?.id) {
         // Update existing task
         await updateTask({
@@ -144,9 +142,12 @@ export const TaskModel = ({ isOpen, onClose, data, projectDir }: TaskModelProps)
   const resetForm = (): void => {
     setTaskName('')
     setDuration('')
+    setStartDate('')
+    setEndDate('')
     setStatus(TaskStatus.NOT_STARTED)
     setPriority(TaskPriority.MEDIUM)
     setCategory(TaskCategory.FEAUTURE)
+    setBranchName('')
   }
 
   const handleAfterClose = (): void => {
@@ -234,8 +235,8 @@ export const TaskModel = ({ isOpen, onClose, data, projectDir }: TaskModelProps)
               style={{ color: Colors.light, width: '100%' }}
               placeholder={['Start Date', 'End Date']}
               value={[
-                startDate ? dayjs(startDate, 'YYYY-MM-DDTHH:mm') : null,
-                endDate ? dayjs(endDate, 'YYYY-MM-DDTHH:mm') : null
+                startDate ? dayjs(startDate, 'YYYY-MM-DD HH:mm') : null,
+                endDate ? dayjs(endDate, 'YYYY-MM-DD HH:mm') : null
               ]}
               onChange={(dates): void => {
                 if (dates) {

@@ -1,4 +1,4 @@
-import { JSX, useState, useMemo, CSSProperties } from 'react'
+import { JSX, useState, useMemo, CSSProperties, useEffect } from 'react'
 import { ColumnDef, Row, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 
 // DnD imports
@@ -22,120 +22,72 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Colors } from '@renderer/constants/Colors'
-
+import {
+  ProjectStatus,
+  TaskCategory,
+  TaskPriority,
+  TaskStatus,
+  useGetTasks
+} from '@renderer/features/full-screen/services'
+import { DatePicker } from 'antd'
+import { CalendarRange } from 'lucide-react'
+import { differenceInDays, differenceInHours, isBefore } from 'date-fns'
+import dayjs, { Dayjs } from 'dayjs'
+const { RangePicker } = DatePicker
 // Task type definition
 type Task = {
-  id: string
-  project: string
+  id?: number
   name: string
-  status: string
-  priority: string
-  timeLeft: string
-  timeSpent: string
+  due_time: Date
+  status: TaskStatus
+  priority: TaskPriority
+  category: TaskCategory
+  project_id?: number
+  created_at?: Date
+  updated_at?: Date
+  progress?: number
+  branch_name: string
+  start_date?: Date
+  end_date?: Date
+  project?: Project
+  activities?: Activity[]
 }
 
-// Sample data
-const initialTasks: Task[] = [
-  {
-    id: '1',
-    project: 'Abc Project',
-    name: 'Design Dashboard',
-    status: 'In Progress',
-    priority: 'High',
-    timeLeft: '2025-07-28',
-    timeSpent: '2025-07-22'
-  },
-  {
-    id: '2',
-    project: 'Abc Project',
-    name: 'Implement Charts',
-    status: 'Completed',
-    priority: 'Medium',
-    timeLeft: '2025-07-22',
-    timeSpent: '2025-07-22'
-  },
-  {
-    id: '3',
-    project: 'Abc Project',
-    name: 'Fix Navigation',
-    status: 'To Do',
-    priority: 'Low',
-    timeLeft: '2025-07-30',
-    timeSpent: '2025-07-22'
-  },
-  {
-    id: '4',
-    project: 'Abc Project',
-    name: 'User Testing',
-    status: 'To Do',
-    priority: 'High',
-    timeLeft: '2025-08-05',
-    timeSpent: '2025-08-05'
-  },
-  {
-    id: '5',
-    project: 'Abc Project',
-    name: 'Deploy to Production',
-    status: 'To Do',
-    priority: 'High',
-    timeLeft: '2025-08-10',
-    timeSpent: '2025-08-10'
-  },
-  {
-    id: '6',
-    project: 'Abc Project',
-    name: 'Deploy to Production',
-    status: 'To Do',
-    priority: 'High',
-    timeLeft: '2025-08-10',
-    timeSpent: '2025-08-10'
-  },
-  {
-    id: '7',
-    project: 'Abc Project',
-    name: 'Deploy to Production',
-    status: 'To Do',
-    priority: 'High',
-    timeLeft: '2025-08-10',
-    timeSpent: '2025-08-10'
-  },
-  {
-    id: '8',
-    project: 'Abc Project',
-    name: 'Deploy to Production',
-    status: 'To Do',
-    priority: 'High',
-    timeLeft: '2025-08-10',
-    timeSpent: '2025-08-10'
-  },
-  {
-    id: '9',
-    project: 'Abc Project',
-    name: 'Deploy to Production',
-    status: 'To Do',
-    priority: 'High',
-    timeLeft: '2025-08-10',
-    timeSpent: '2025-08-10'
-  },
-  {
-    id: '10',
-    project: 'Abc Project',
-    name: 'Deploy to Production',
-    status: 'To Do',
-    priority: 'High',
-    timeLeft: '2025-08-10',
-    timeSpent: '2025-08-10'
-  },
-  {
-    id: '11',
-    project: 'Abc Project',
-    name: 'Deploy to Production',
-    status: 'To Do',
-    priority: 'High',
-    timeLeft: '2025-08-10',
-    timeSpent: '2025-08-10'
+type Project = {
+  id: number
+  name: string
+  image_id: number | null
+  image: {
+    id: number
+    filename: string
+    mimetype: string
+    url: string
+    created_at: string
+    updated_at: string
   }
-]
+  status: ProjectStatus
+  color?: string
+  isNew?: boolean
+  task_count?: number | string
+  member_count?: number | string
+  created_at?: string
+  project_file_url?: string
+}
+
+type Activity = {
+  id: number
+  task_id: number
+  task: Task
+  start_time: Date
+  end_time?: Date
+  duration?: number
+  percentage?: number
+  status: TaskStatus
+  notes?: string
+  created_at: Date
+  updated_at: Date
+  created_by?: string
+}
 
 // Drag handle cell component
 const RowDragHandleCell = (): JSX.Element => {
@@ -189,19 +141,20 @@ const StatusBadge = ({ status }: { status: string }): JSX.Element => {
 // Priority badge component
 const PriorityBadge = ({ priority }: { priority: string }): JSX.Element => {
   let bgColor = 'bg-gray-100 text-gray-800'
-
-  if (priority === 'High') {
+  if (priority === TaskPriority.HIGH) {
     bgColor = 'bg-red-100 text-red-800'
-  } else if (priority === 'Medium') {
+  } else if (priority === TaskPriority.MEDIUM) {
     bgColor = 'bg-orange-100 text-orange-800'
-  } else if (priority === 'Low') {
+  } else if (priority === TaskPriority.LOW) {
     bgColor = 'bg-green-100 text-green-800'
+  } else if (priority === TaskPriority.URGENT) {
+    bgColor = 'bg-red-300 text-red-800'
   }
 
   return (
     <span
       style={{ paddingBlock: 5, paddingInline: 10 }}
-      className={` rounded-full text-xs font-medium ${bgColor}`}
+      className={` rounded-full text-xs font-semibold ${bgColor}`}
     >
       {priority}
     </span>
@@ -249,8 +202,27 @@ const DraggableRow = ({ row }: { row: Row<Task> }): JSX.Element => {
   )
 }
 
+interface DateRange {
+  startDate: Date
+  endDate: Date
+}
+
 export const TasksTable = (): JSX.Element => {
-  const [tasks, setTasks] = useState<Task[]>(() => initialTasks)
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null)
+  const { data: tasksResponse = { data: [] }, refetch } = useGetTasks({
+    start_date: dateRange?.[0]?.toDate(),
+    end_date: dateRange?.[1]?.toDate()
+  })
+  useEffect(() => {
+    setTasks(tasksResponse.data || [])
+  }, [tasksResponse])
+
+  useEffect(() => {
+    if (dateRange) {
+      refetch()
+    }
+  }, [dateRange, refetch])
 
   // Define columns
   const columns = useMemo<ColumnDef<Task>[]>(
@@ -258,11 +230,14 @@ export const TasksTable = (): JSX.Element => {
       {
         accessorKey: 'project',
         header: 'Project',
-        cell: (info) => (
-          <span className="font-medium" style={{ fontFamily: 'Skyer', color: Colors.light }}>
-            {info.getValue() as string}
-          </span>
-        )
+        cell: (info) => {
+          const project = info.getValue() as Project
+          return (
+            <span className="font-medium" style={{ fontFamily: 'Skyer', color: Colors.light }}>
+              {project?.name || 'No Project'}
+            </span>
+          )
+        }
       },
       {
         accessorKey: 'name',
@@ -285,35 +260,42 @@ export const TasksTable = (): JSX.Element => {
         size: 70
       },
       {
-        accessorKey: 'timeLeft',
+        accessorKey: 'end_date',
         header: 'Time Left',
         cell: (info) => {
-          const date = new Date(info.getValue() as string)
-          return (
-            <div style={{ color: Colors.light, textAlign: 'start' }}>
-              {date.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-            </div>
-          )
+          const endDate = new Date(info.getValue() as string)
+          const now = new Date()
+
+          let display = ''
+          let color = Colors.primary
+
+          if (isBefore(endDate, now)) {
+            display = 'Expired'
+            color = Colors.expired
+          } else {
+            const days = differenceInDays(endDate, now)
+            const hours = differenceInHours(endDate, now) % 24
+
+            if (days > 3) {
+              color = Colors.primary
+            } else if (days > 1) {
+              color = Colors.warning
+            } else {
+              color = Colors.error
+            }
+
+            display = days > 0 ? `${days}d ${hours}h` : `${hours}h`
+          }
+
+          return <div style={{ color, textAlign: 'start' }}>{display}</div>
         }
       },
       {
-        accessorKey: 'timeSpent',
+        accessorKey: 'activities',
         header: 'Time Spent',
         cell: (info) => {
-          const date = new Date(info.getValue() as string)
-          return (
-            <div style={{ color: Colors.light, textAlign: 'center' }}>
-              {date.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-            </div>
-          )
+          const activities = info.getValue() as Activity[]
+          return <div style={{ color: Colors.light, textAlign: 'center' }}>{activities.length}</div>
         }
       },
       {
@@ -372,13 +354,16 @@ export const TasksTable = (): JSX.Element => {
     []
   )
 
-  const taskIds = useMemo<UniqueIdentifier[]>(() => tasks.map(({ id }) => id), [tasks])
+  const taskIds = useMemo<UniqueIdentifier[]>(
+    () => tasks.map(({ id }) => id).filter((id): id is number => id !== undefined),
+    [tasks]
+  )
 
   const table = useReactTable({
     data: tasks,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getRowId: (row) => row.id
+    getRowId: (row) => row.id.toString()
   })
 
   // Handle drag end event
@@ -419,10 +404,36 @@ export const TasksTable = (): JSX.Element => {
       }}
     >
       <div className="flex justify-between items-center " style={{ marginBottom: 10 }}>
-        <p className="text-xl font-bold" style={{ color: Colors.primary, fontFamily: 'Skyer' }}>
+        <p
+          className="text-xl font-bold"
+          style={{ color: Colors.primaryForeground, fontFamily: 'Skyer' }}
+        >
           All Tasks
         </p>
         <div className="flex gap-2">
+          <RangePicker
+            picker="month"
+            value={dateRange}
+            onChange={(value) => {
+              if (!value) {
+                setDateRange(null)
+                // Reset to show all tasks or handle empty state
+                refetch()
+              } else {
+                setDateRange([dayjs(value[0]), dayjs(value[1])])
+              }
+            }}
+            suffixIcon={
+              <CalendarRange size={20} strokeWidth={1} style={{ color: Colors.primary }} />
+            }
+            styles={{
+              root: {
+                backgroundColor: Colors.darkGreen,
+                color: Colors.primary,
+                fill: Colors.primary
+              }
+            }}
+          />
           <button className="px-3 py-1 bg-indigo-600 text-white rounded-md text-sm flex items-center gap-1">
             <svg
               xmlns="http://www.w3.org/2000/svg"

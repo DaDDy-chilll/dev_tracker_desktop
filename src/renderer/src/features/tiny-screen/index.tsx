@@ -4,7 +4,6 @@ import { useTinyScreenState } from '@renderer/layouts/tiny-screen/useTinyScreenS
 
 const TinyScreen = (): JSX.Element => {
   const { tinyTest } = useTinyScreenState()
-  console.log('tinyTest Logs', tinyTest)
   return (
     <TinyScreenLayoutProvider>
       <div className=" text-red-500">this is tiny screen</div>
