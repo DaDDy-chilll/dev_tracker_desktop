@@ -18,7 +18,7 @@ const isDevelopment = import.meta.env.DEV
 // Define API URLs based on environment
 const DEV_URL = 'http://localhost:5001/'
 const PROD_URL = 'https://devtrack.dpdns.org/'
-const BASE_URL = isDevelopment ? DEV_URL : PROD_URL
+const BASE_URL = !isDevelopment ? DEV_URL : PROD_URL
 
 // Electron uses process.env instead of EXPO_PUBLIC_*
 
